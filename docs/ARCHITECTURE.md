@@ -46,6 +46,8 @@ Un cercle est un **secret aléatoire de 32 octets** + un nom. Il est transmis pa
 ### Identité
 Chaque appareil génère une graine aléatoire de 32 octets qui ne quitte jamais l'appareil (exclue des sauvegardes). Pour **chaque cercle**, une clé de signature Nostr différente est dérivée (`HKDF(graine, "author:" + tag)`) : un relais ne peut pas relier vos différents cercles entre eux.
 
+Une **clé d'identité** personnelle est aussi dérivée de la graine (`HKDF(graine, "member-identity")`). Sa clé publique sert d'**identifiant de membre** ; elle n'apparaît que dans le contenu chiffré, donc seuls les membres des cercles la voient.
+
 ### Publication d'une position
 Événement Nostr, kind **30078** (NIP-78, « données d'application », remplaçable) :
 
@@ -58,16 +60,20 @@ Chaque appareil génère une graine aléatoire de 32 octets qui ne quitte jamais
 }
 ```
 
-Contenu chiffré :
+Contenu chiffré : une enveloppe **signée par le membre** avec sa clé d'identité (Schnorr BIP-340) :
 ```json
-{"v":1, "id":"<id membre>", "n":"Prénom", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000}
+{"v":2, "p":"<JSON interne>", "s":"<signature>"}
 ```
-`{"v":1, "id":"...", "off":true}` signale l'arrêt du partage (le marqueur disparaît chez les autres).
+avec `signature = Schnorr(clé d'identité, taggedHash("whereareyou/v2/message", tag || JSON interne))` et le JSON interne :
+```json
+{"k":"<clé publique d'identité>", "n":"Prénom", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000}
+```
+`{"k":"...", "off":true, "ts":...}` signale l'arrêt du partage (le marqueur disparaît chez les autres).
 
 Les relais ne gardent que le **dernier** événement par (auteur, `d`) : c'est exactement la « dernière position connue ».
 
 ### Réception
-Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 24 h}` sur tous les relais. Chaque événement est déchiffré avec la clé du cercle ; s'il ne se déchiffre pas, il est ignoré.
+Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 24 h}` sur tous les relais. Chaque événement est déchiffré avec la clé du cercle ; s'il ne se déchiffre pas, il est ignoré. Ensuite l'enveloppe est vérifiée : le message est rejeté si la signature ne correspond pas à la clé `k` annoncée (un membre ne peut pas se faire passer pour un autre), si `ts` a plus de 24 h, ou s'il est plus ancien que le dernier message accepté de ce membre dans ce cercle (pas de rejeu).
 
 ### Ce que voit un relais
 - des clés publiques aléatoires (une par membre et par cercle), un tag aléatoire, une date, un contenu chiffré ;
@@ -76,7 +82,6 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 ### Limites connues (v0.1)
 - Tout porteur du lien d'invitation peut rejoindre le cercle : il faut le transmettre par un canal de confiance (idéalement le QR code en personne).
 - On ne peut pas exclure quelqu'un d'un cercle : il faut en recréer un.
-- Au sein d'un cercle, un membre pourrait se faire passer pour un autre (même clé de groupe). Amélioration prévue : signature interne par membre.
 - Les secrets sont stockés dans les préférences privées de l'app (non sauvegardées). Amélioration prévue : chiffrement via Android Keystore.
 - Le partage s'arrête si le système tue l'app (pas de redémarrage automatique : nécessiterait l'autorisation « localisation en arrière-plan »).
 

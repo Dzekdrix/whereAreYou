@@ -48,12 +48,18 @@ class LocationRepository(private val store: Store) {
 
     private val seed = store.identitySeed()
 
-    /** Stable id, only visible (encrypted) to circle members, to merge one person seen in several circles. */
-    private val memberId = Crypto.hex(Crypto.hkdf(seed, "whereareyou-v1".toByteArray(), "member-id".toByteArray(), 8))
+    /**
+     * Personal identity key: every message is signed with it (see [Envelope]).
+     * Its public key is our member id, only visible (encrypted) to circle members,
+     * used to merge one person seen in several circles.
+     */
+    private val identity = KeyPair.derive(seed, "member-identity")
+    private val memberId = identity.publicHex
     private val authorKeys = ConcurrentHashMap<String, KeyPair>()
 
     private val lock = Any()
     private val entries = HashMap<String, HashMap<String, Pair<String, Fix>>>() // memberId -> tag -> (name, fix)
+    private val lastSeen = HashMap<String, Long>() // "memberId|tag" -> ts of the latest accepted message (anti-replay)
     private val seenIds = LinkedHashSet<String>()
     private var users = 0
 
@@ -145,8 +151,6 @@ class LocationRepository(private val store: Store) {
 
     private fun publishTo(c: Circle, fix: Fix) {
         val payload = JSONObject()
-            .put("v", 1)
-            .put("id", memberId)
             .put("n", store.displayName)
             .put("lat", Math.round(fix.lat * 1e6) / 1e6)
             .put("lon", Math.round(fix.lon * 1e6) / 1e6)
@@ -155,11 +159,12 @@ class LocationRepository(private val store: Store) {
         send(c, payload)
     }
 
-    private fun publishOff(c: Circle) = send(c, JSONObject().put("v", 1).put("id", memberId).put("off", true))
+    private fun publishOff(c: Circle) = send(c, JSONObject().put("off", true).put("ts", System.currentTimeMillis()))
 
     private fun send(c: Circle, payload: JSONObject) {
         scope.launch {
-            val content = Crypto.encrypt(c.key, payload.toString().toByteArray(), c.tag.toByteArray())
+            val signed = Envelope.seal(identity, c.tag, payload)
+            val content = Crypto.encrypt(c.key, signed.toByteArray(), c.tag.toByteArray())
             val now = System.currentTimeMillis() / 1000
             val tags = listOf(listOf("d", c.tag), listOf("expiration", (now + EXPIRATION_SECONDS).toString()))
             val event = Nostr.signEvent(authorKey(c), Nostr.KIND_APP_DATA, tags, content, now)
@@ -190,19 +195,25 @@ class LocationRepository(private val store: Store) {
         val circle = _circles.value.firstOrNull { it.tag == tag } ?: return
         if (ev.optString("pubkey") == authorKey(circle).publicHex) return // our own event
         val plain = Crypto.decrypt(circle.key, ev.optString("content"), tag.toByteArray()) ?: return
-        val p = try { JSONObject(String(plain)) } catch (e: Exception) { return }
-        val mid = p.optString("id").ifEmpty { ev.optString("pubkey") }
+        // Rejects unsigned messages and messages signed by someone else than the member they claim to be.
+        val p = Envelope.open(tag, String(plain)) ?: run {
+            Log.w(TAG, "dropped message with invalid signature")
+            return
+        }
+        val mid = p.getString("k")
         if (mid == memberId) return
+        val ts = p.getLong("ts")
+        if (ts < System.currentTimeMillis() - EXPIRATION_SECONDS * 1000) return // too old: replay
         synchronized(lock) {
+            val key = "$mid|$tag"
+            if (ts < (lastSeen[key] ?: Long.MIN_VALUE)) return // older than what we already have: replay
+            lastSeen[key] = ts
             val perCircle = entries.getOrPut(mid) { HashMap() }
             if (p.optBoolean("off")) {
                 perCircle.remove(tag)
             } else {
-                val fix = Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), p.optLong("ts"))
-                val previous = perCircle[tag]
-                if (previous == null || previous.second.time <= fix.time) {
-                    perCircle[tag] = p.optString("n", "?") to fix
-                }
+                perCircle[tag] = p.optString("n", "?") to
+                    Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts)
             }
         }
         rebuildMembers()
