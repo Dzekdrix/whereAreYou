@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.whereareyou"
+        applicationId = "io.github.dzekdrix.whereareyou"
         minSdk = 29 // Android 10
         targetSdk = 35
         versionCode = 1
