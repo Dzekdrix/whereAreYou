@@ -1,0 +1,50 @@
+package io.github.whereareyou.data
+
+import io.github.whereareyou.crypto.Crypto
+import org.json.JSONObject
+
+private val SALT = "whereareyou-v1".toByteArray()
+
+/**
+ * A circle (group) is just a shared random secret. Everyone holding the secret
+ * can publish and read encrypted positions in the circle.
+ * Sharing with a single person = a circle of two.
+ */
+class Circle(val name: String, val secret: ByteArray, val share: Boolean) {
+    /** Public, random-looking identifier used as the Nostr "d" tag. Reveals nothing about the circle. */
+    val tag: String = Crypto.hex(Crypto.hkdf(secret, SALT, "tag".toByteArray(), 16))
+
+    /** AES-256 key used to encrypt positions. */
+    val key: ByteArray = Crypto.hkdf(secret, SALT, "enc".toByteArray(), 32)
+
+    fun copy(name: String = this.name, share: Boolean = this.share) = Circle(name, secret, share)
+}
+
+data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: Long)
+
+data class Member(val id: String, val name: String, val fix: Fix, val circles: List<String>)
+
+/** Invitation link / QR code content: whereareyou://join/<base64url(json)> */
+object Invite {
+    const val PREFIX = "whereareyou://join/"
+
+    fun encode(circle: Circle): String {
+        val json = JSONObject().put("v", 1).put("n", circle.name).put("k", Crypto.b64url(circle.secret))
+        return PREFIX + Crypto.b64url(json.toString().toByteArray())
+    }
+
+    /** Accepts the bare link or any text containing it (e.g. a forwarded message). */
+    fun decode(text: String): Pair<String, ByteArray>? = try {
+        val start = text.indexOf(PREFIX)
+        if (start < 0) {
+            null
+        } else {
+            val payload = text.substring(start + PREFIX.length).takeWhile { it.isLetterOrDigit() || it == '-' || it == '_' }
+            val json = JSONObject(String(Crypto.unb64url(payload)))
+            val secret = Crypto.unb64url(json.getString("k"))
+            if (secret.size != 32) null else json.optString("n", "?") to secret
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
