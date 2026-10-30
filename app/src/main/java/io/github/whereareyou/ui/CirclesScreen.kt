@@ -1,6 +1,23 @@
 package io.github.whereareyou.ui
 
 import android.content.Intent
+import android.text.format.DateUtils
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Color
+import io.github.whereareyou.data.Fix
+import kotlinx.coroutines.delay
+import java.text.DateFormat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,12 +64,21 @@ import io.github.whereareyou.R
 import io.github.whereareyou.data.Circle
 import io.github.whereareyou.data.Invite
 import io.github.whereareyou.data.LocationRepository
-import androidx.activity.compose.rememberLauncherForActivityResult
 
 @Composable
-fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit) {
+fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (String) -> Unit) {
     val circles by repo.circles.collectAsStateWithLifecycle()
     val members by repo.members.collectAsStateWithLifecycle()
+    val sharing by repo.sharingActive.collectAsStateWithLifecycle()
+    val ownFix by repo.ownFix.collectAsStateWithLifecycle()
+    var expanded by rememberSaveable { mutableStateOf(setOf<String>()) }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            now = System.currentTimeMillis()
+        }
+    }
     var creating by remember { mutableStateOf(false) }
     var inviting by remember { mutableStateOf<Circle?>(null) }
     var deleting by remember { mutableStateOf<Circle?>(null) }
@@ -81,13 +107,19 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit) {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
         ) {
             items(circles, key = { it.tag }) { circle ->
-                val names = members.filter { circle.name in it.circles }.joinToString(", ") { it.name }
-                Card(Modifier.fillMaxWidth()) {
+                val inCircle = members.filter { circle.tag in it.circleTags }
+                val isOpen = circle.tag in expanded
+                Card(
+                    onClick = { expanded = if (isOpen) expanded - circle.tag else expanded + circle.tag },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(circle.name, style = MaterialTheme.typography.titleLarge)
-                                if (names.isNotEmpty()) Text(names, style = MaterialTheme.typography.bodyMedium)
+                                if (!isOpen && inCircle.isNotEmpty()) {
+                                    Text(inCircle.joinToString(", ") { it.name }, style = MaterialTheme.typography.bodyMedium)
+                                }
                             }
                             IconButton(onClick = { inviting = circle }) {
                                 Icon(Icons.Filled.Share, stringResource(R.string.invite))
@@ -95,10 +127,33 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit) {
                             IconButton(onClick = { deleting = circle }) {
                                 Icon(Icons.Filled.Delete, stringResource(R.string.delete))
                             }
+                            Icon(if (isOpen) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.share_in_circle), Modifier.weight(1f))
                             Switch(checked = circle.share, onCheckedChange = { repo.setShare(circle, it) })
+                        }
+                        AnimatedVisibility(isOpen) {
+                            Column {
+                                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                val me = ownFix
+                                if (circle.share && sharing && me != null) {
+                                    MemberRow(
+                                        id = "me",
+                                        name = stringResource(R.string.me, repo.displayName),
+                                        fix = me,
+                                        now = now,
+                                        onClick = null,
+                                        avatarName = repo.displayName,
+                                    )
+                                } else if (!circle.share) {
+                                    Hint(stringResource(R.string.not_sharing_here))
+                                }
+                                inCircle.forEach { m ->
+                                    MemberRow(m.id, m.name, m.fix, now, onClick = { onShowMember(m.id) })
+                                }
+                                if (inCircle.isEmpty()) Hint(stringResource(R.string.no_members_yet))
+                            }
                         }
                     }
                 }
@@ -140,6 +195,39 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit) {
             dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
+}
+
+@Composable
+private fun Hint(text: String) = Text(
+    text,
+    style = MaterialTheme.typography.bodyMedium,
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    modifier = Modifier.padding(vertical = 8.dp),
+)
+
+/** One member inside an expanded circle: name, last update, accuracy. */
+@Composable
+private fun MemberRow(id: String, name: String, fix: Fix, now: Long, onClick: (() -> Unit)?, avatarName: String = name) {
+    val res = LocalContext.current.resources
+    val avatar = remember(id, avatarName) { avatarBitmap(id, avatarName, 96, false).asImageBitmap() }
+    val time = DateUtils.formatSameDayTime(fix.time, now, DateFormat.SHORT, DateFormat.SHORT).toString()
+    ListItem(
+        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        leadingContent = { Image(avatar, null, Modifier.size(36.dp)) },
+        headlineContent = { Text(name) },
+        supportingContent = {
+            Column {
+                Text(stringResource(R.string.updated, formatAge(res, fix.time, now), time))
+                Text(stringResource(R.string.accuracy_long, fix.accuracy.toInt()))
+            }
+        },
+        trailingContent = if (onClick != null) {
+            { Icon(Icons.Filled.Place, stringResource(R.string.show_on_map)) }
+        } else {
+            null
+        },
+    )
 }
 
 @Composable

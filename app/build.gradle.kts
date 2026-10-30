@@ -60,8 +60,9 @@ dependencies {
 
     // Network (WebSocket to Nostr relays)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    // OpenStreetMap map view
-    implementation("org.osmdroid:osmdroid-android:6.1.20")
+    // Vector map (OpenStreetMap data via OpenFreeMap styles)
+    implementation("org.maplibre.gl:android-sdk:12.3.0")
+    implementation("org.maplibre.gl:android-sdk-turf:6.0.1") // accuracy circle geometry
     // QR codes (generate + scan)
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }

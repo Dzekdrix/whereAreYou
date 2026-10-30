@@ -1,4 +1,4 @@
-whereAreYou lets you share your location with your people and see theirs on an OpenStreetMap map.
+whereAreYou lets you share your location with your people and see theirs on a crisp OpenStreetMap map.
 
 * Circles: every member of a circle automatically sees the others.
 * Invite with a QR code or a link, no account or phone number needed.

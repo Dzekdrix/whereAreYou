@@ -43,6 +43,8 @@ class LocationRepository(private val store: Store) {
     private val _ownFix = MutableStateFlow<Fix?>(null)
     val ownFix: StateFlow<Fix?> = _ownFix.asStateFlow()
 
+    val displayName: String get() = store.displayName
+
     /** True while the LocationService is running. */
     val sharingActive = MutableStateFlow(false)
 
@@ -225,7 +227,7 @@ class LocationRepository(private val store: Store) {
             entries.mapNotNull { (mid, perCircle) ->
                 val visible = perCircle.filterKeys { it in names }
                 val latest = visible.values.maxByOrNull { it.second.time } ?: return@mapNotNull null
-                Member(mid, latest.first, latest.second, visible.keys.mapNotNull { names[it] }.sorted())
+                Member(mid, latest.first, latest.second, visible.keys.mapNotNull { names[it] }.sorted(), visible.keys.toSet())
             }
         }
         _members.value = list.sortedBy { it.name.lowercase() }

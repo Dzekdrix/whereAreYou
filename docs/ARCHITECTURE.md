@@ -7,7 +7,7 @@
 | 1 | Géolocalisation entre utilisateurs | ✅ | `LocationManager` natif d'Android (GPS, réseau, « fused » AOSP sur Android 12+). |
 | 2 | Partager sa position / voir ceux qui partagent avec moi | ✅ | Modélisé comme un **cercle à deux**. Le partage est asymétrique : interrupteur « Partager ma position » par cercle. |
 | 3 | Groupes : on voit automatiquement tous les membres | ✅ | Un cercle = un secret partagé. Tous ceux qui ont le secret voient tous les autres, sans liste de membres à gérer. |
-| 4 | 100 % open source, services open source ou publics | ✅ | Aucun Google Play Services / Firebase / Google Maps. Carte OpenStreetMap, relais Nostr publics. |
+| 4 | 100 % open source, services open source ou publics | ✅ | Aucun Google Play Services / Firebase / Google Maps. Carte MapLibre + OpenFreeMap (données OpenStreetMap), relais Nostr publics. |
 | 5 | Pas de serveur, P2P sécurisé, sinon décentralisé et résilient | ⚠️ → ✅ | **Le P2P pur n'est pas réaliste sur mobile** (voir §2). Solution retenue : **relais Nostr publics**, plusieurs en parallèle, chiffrement de bout en bout. Aucun serveur à nous. |
 | 6 | GitHub + F-Droid | ✅ | Licence GPL-3.0+, dépendances 100 % libres, pas de binaire précompilé, `dependenciesInfo` désactivé, métadonnées fastlane fournies. |
 | 7 | Natif Android, briques de design natives | ✅ | Kotlin + Jetpack Compose + Material 3 (couleurs dynamiques « Material You » sur Android 12+). |
@@ -17,7 +17,7 @@
 
 - **5 ↔ 1/2/3 (pas de serveur ↔ voir la position des autres à distance)** : c'est la seule vraie tension. Voir §2.
 - **4/6 ↔ fiabilité de la localisation** : sans Google Play Services, pas de `FusedLocationProviderClient` ni de push Firebase. On utilise l'API Android de base (un peu moins économe en batterie) et une connexion WebSocket maintenue par un service de premier plan (une notification permanente est visible pendant le partage, c'est obligatoire et c'est aussi plus honnête pour l'utilisateur).
-- **6 ↔ cartes** : Google Maps est interdit sur F-Droid → osmdroid + tuiles OpenStreetMap. La politique d'usage des tuiles OSM tolère un usage modéré ; si l'app grossit, prévoir de passer à MapLibre + un fournisseur de tuiles libre (ex. OpenFreeMap) ou de laisser l'utilisateur choisir sa source.
+- **6 ↔ cartes** : Google Maps est interdit sur F-Droid → carte vectorielle **MapLibre** (BSD) avec les styles et tuiles libres **OpenFreeMap** (données OpenStreetMap, sans clé ni compte). Le rendu vectoriel reste net sur les écrans haute densité, contrairement aux tuiles image 256 px d'OpenStreetMap (version 0.1, osmdroid) qui devaient être agrandies. Évolution possible : laisser l'utilisateur choisir sa source de carte.
 
 ## 2. Pourquoi pas du P2P pur ?
 
@@ -89,7 +89,7 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 
 ```
 app/src/main/java/io/github/whereareyou/
-├── WhereApp.kt              Application : init. stockage, dépôt, osmdroid, canal de notification
+├── WhereApp.kt              Application : init. stockage, dépôt, MapLibre, canal de notification
 ├── crypto/
 │   ├── Crypto.kt            SHA-256, HMAC, HKDF, AES-GCM (API Java standard)
 │   └── Secp256k1.kt         secp256k1 + signatures Schnorr BIP-340 en Kotlin pur
@@ -111,7 +111,7 @@ app/src/main/java/io/github/whereareyou/
 |---|---|---|
 | AndroidX / Jetpack Compose / Material 3 | Apache 2.0 | UI native |
 | OkHttp | Apache 2.0 | WebSocket |
-| osmdroid | Apache 2.0 | Carte OpenStreetMap |
+| MapLibre Android (+ turf) | BSD-2-Clause | Carte vectorielle (styles OpenFreeMap, données OpenStreetMap) |
 | ZXing core + zxing-android-embedded | Apache 2.0 | QR codes |
 | kotlinx.coroutines | Apache 2.0 | Concurrence |
 

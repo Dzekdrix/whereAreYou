@@ -5,8 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import io.github.whereareyou.data.LocationRepository
 import io.github.whereareyou.data.Store
-import org.osmdroid.config.Configuration
-import java.io.File
+import org.maplibre.android.MapLibre
 
 class WhereApp : Application() {
     lateinit var store: Store
@@ -19,12 +18,7 @@ class WhereApp : Application() {
         store = Store(this)
         repo = LocationRepository(store)
 
-        // OpenStreetMap tile usage policy requires an identifying user agent.
-        Configuration.getInstance().apply {
-            userAgentValue = "${BuildConfig.APPLICATION_ID}/${BuildConfig.VERSION_NAME}"
-            osmdroidBasePath = File(cacheDir, "osmdroid")
-            osmdroidTileCache = File(cacheDir, "osmdroid/tiles")
-        }
+        MapLibre.getInstance(this)
 
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL_SHARING, getString(R.string.channel_sharing), NotificationManager.IMPORTANCE_LOW)

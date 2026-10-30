@@ -7,20 +7,30 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -91,6 +101,8 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
     val scope = rememberCoroutineScope()
     val sharing by repo.sharingActive.collectAsStateWithLifecycle()
     var joinDialog by remember { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    var focusMember by remember { mutableStateOf<String?>(null) }
 
     fun toast(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
 
@@ -125,14 +137,25 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
         }
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(tab.label)) }) },
-        bottomBar = {
-            NavigationBar {
+    // Back closes the menu, then returns to the map.
+    BackHandler(enabled = drawerState.isOpen || tab != Tab.MAP) {
+        if (drawerState.isOpen) scope.launch { drawerState.close() } else tab = Tab.MAP
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        // Swiping would conflict with panning the map: the drawer opens with the menu button only.
+        gesturesEnabled = drawerState.isOpen,
+        drawerContent = {
+            ModalDrawerSheet(Modifier.widthIn(max = 300.dp)) {
+                Text(
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+                )
                 Tab.entries.forEach { t ->
-                    NavigationBarItem(
-                        selected = tab == t,
-                        onClick = { tab = t },
+                    NavigationDrawerItem(
+                        label = { Text(stringResource(t.label)) },
                         icon = {
                             Icon(
                                 when (t) {
@@ -143,18 +166,45 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                                 contentDescription = null
                             )
                         },
-                        label = { Text(stringResource(t.label)) }
+                        selected = tab == t,
+                        onClick = {
+                            tab = t
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     )
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        Box(Modifier.padding(padding)) {
-            when (tab) {
-                Tab.MAP -> MapScreen(repo, onToggleSharing = toggleSharing, onGoToCircles = { tab = Tab.CIRCLES })
-                Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true })
-                Tab.SETTINGS -> SettingsScreen(app, onMessage = { toast(it) })
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(tab.label)) },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Filled.Menu, stringResource(R.string.menu))
+                        }
+                    },
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbar) },
+        ) { padding ->
+            Box(Modifier.padding(padding)) {
+                when (tab) {
+                    Tab.MAP -> MapScreen(
+                        repo,
+                        onToggleSharing = toggleSharing,
+                        onGoToCircles = { tab = Tab.CIRCLES },
+                        focusMemberId = focusMember,
+                        onFocusHandled = { focusMember = null },
+                    )
+                    Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onShowMember = {
+                        focusMember = it
+                        tab = Tab.MAP
+                    })
+                    Tab.SETTINGS -> SettingsScreen(app, onMessage = { toast(it) })
+                }
             }
         }
     }

@@ -22,7 +22,8 @@ class Circle(val name: String, val secret: ByteArray, val share: Boolean) {
 
 data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: Long)
 
-data class Member(val id: String, val name: String, val fix: Fix, val circles: List<String>)
+/** A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us. */
+data class Member(val id: String, val name: String, val fix: Fix, val circles: List<String>, val circleTags: Set<String>)
 
 /** Invitation link / QR code content: whereareyou://join/<base64url(json)> */
 object Invite {

@@ -9,6 +9,7 @@
     <string name="tab_map">Carte</string>
     <string name="tab_circles">Cercles</string>
     <string name="tab_settings">Réglages</string>
+    <string name="menu">Menu</string>
 
     <string name="center_on_me">Centrer sur moi</string>
     <string name="fit_all">Voir tout le monde</string>
@@ -19,6 +20,12 @@
     <string name="age_hours">il y a %1$d h</string>
     <string name="age_days">il y a %1$d j</string>
     <string name="accuracy">±%1$d m</string>
+    <string name="updated">Mis à jour %1$s (%2$s)</string>
+    <string name="accuracy_long">Précision ±%1$d m</string>
+    <string name="me">Moi (%1$s)</string>
+    <string name="no_members_yet">Personne n\'a encore partagé sa position dans ce cercle.</string>
+    <string name="not_sharing_here">Vous ne partagez pas votre position dans ce cercle.</string>
+    <string name="show_on_map">Voir sur la carte</string>
     <string name="permission_denied">L\'autorisation de localisation est nécessaire pour partager votre position.</string>
     <string name="location_disabled">La localisation est désactivée sur cet appareil.</string>
 
@@ -56,5 +63,5 @@
     <string name="relay_connecting">connexion…</string>
     <string name="relay_disconnected">déconnecté</string>
     <string name="about">À propos</string>
-    <string name="about_text">whereAreYou %1$s — logiciel libre (GPL-3.0 ou ultérieure). Pas de compte, pas de serveur à nous. Données cartographiques © contributeurs OpenStreetMap.</string>
+    <string name="about_text">whereAreYou %1$s — logiciel libre (GPL-3.0 ou ultérieure). Pas de compte, pas de serveur à nous. Carte : OpenFreeMap © OpenMapTiles, données © contributeurs OpenStreetMap.</string>
 </resources>

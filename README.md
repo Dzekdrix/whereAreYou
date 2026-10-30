@@ -3,7 +3,7 @@
 Application Android libre de partage de position entre proches. **Sans compte, sans serveur à nous, sans Google.**
 
 - Créez un **cercle** (famille, amis, sortie…) et invitez des personnes par QR code ou par lien.
-- Tous les membres d'un cercle se voient automatiquement sur une carte OpenStreetMap.
+- Tous les membres d'un cercle se voient automatiquement sur une carte vectorielle nette (OpenStreetMap, via OpenFreeMap).
 - Pour partager avec une seule personne : un cercle à deux.
 - Les positions sont **chiffrées de bout en bout** (AES-256-GCM) et transitent par plusieurs **relais Nostr publics** en parallèle : si l'un disparaît, les autres prennent le relais. Vous pouvez ajouter les vôtres.
 
@@ -40,4 +40,4 @@ Android 10 (API 29) et plus. Aucune dépendance aux services Google.
 
 ## Licence
 
-[GPL-3.0-or-later](LICENSE). Données cartographiques © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright).
+[GPL-3.0-or-later](LICENSE). Carte : [OpenFreeMap](https://openfreemap.org), © [OpenMapTiles](https://www.openmaptiles.org), données © contributeurs [OpenStreetMap](https://www.openstreetmap.org/copyright).

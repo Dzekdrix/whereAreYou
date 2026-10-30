@@ -10,6 +10,7 @@
     <string name="tab_map">Map</string>
     <string name="tab_circles">Circles</string>
     <string name="tab_settings">Settings</string>
+    <string name="menu">Menu</string>
 
     <string name="center_on_me">Center on me</string>
     <string name="fit_all">Show everyone</string>
@@ -20,6 +21,12 @@
     <string name="age_hours">%1$d h ago</string>
     <string name="age_days">%1$d d ago</string>
     <string name="accuracy">±%1$d m</string>
+    <string name="updated">Updated %1$s (%2$s)</string>
+    <string name="accuracy_long">Accuracy ±%1$d m</string>
+    <string name="me">Me (%1$s)</string>
+    <string name="no_members_yet">Nobody has shared a position in this circle yet.</string>
+    <string name="not_sharing_here">You are not sharing your position in this circle.</string>
+    <string name="show_on_map">Show on map</string>
     <string name="permission_denied">Location permission is required to share your position.</string>
     <string name="location_disabled">Location is turned off on this device.</string>
 
@@ -57,5 +64,5 @@
     <string name="relay_connecting">connecting…</string>
     <string name="relay_disconnected">disconnected</string>
     <string name="about">About</string>
-    <string name="about_text">whereAreYou %1$s — free software (GPL-3.0-or-later). No account, no server of our own. Map data © OpenStreetMap contributors.</string>
+    <string name="about_text">whereAreYou %1$s — free software (GPL-3.0-or-later). No account, no server of our own. Map: OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors.</string>
 </resources>

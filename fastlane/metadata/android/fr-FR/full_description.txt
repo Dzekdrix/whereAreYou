@@ -1,4 +1,4 @@
-whereAreYou permet de partager votre position avec vos proches et de voir la leur sur une carte OpenStreetMap.
+whereAreYou permet de partager votre position avec vos proches et de voir la leur sur une carte OpenStreetMap nette et fluide.
 
 * Cercles : tous les membres d'un cercle se voient automatiquement.
 * Invitation par QR code ou par lien, sans compte ni numéro de téléphone.
