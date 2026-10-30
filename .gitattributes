@@ -1,0 +1,8 @@
+# Fins de ligne Linux (LF) pour tous les fichiers texte
+* text=auto eol=lf
+
+# Fichiers binaires
+*.jar binary
+*.png binary
+*.jpg binary
+*.webp binary
