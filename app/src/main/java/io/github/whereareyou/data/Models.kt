@@ -20,7 +20,8 @@ class Circle(val name: String, val secret: ByteArray, val share: Boolean) {
     fun copy(name: String = this.name, share: Boolean = this.share) = Circle(name, secret, share)
 }
 
-data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: Long)
+/** A position report. [maxGapMs]: longest silence announced by its author before the next one (0 = unknown). */
+data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: Long, val maxGapMs: Long = 0)
 
 /** A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us. */
 data class Member(val id: String, val name: String, val fix: Fix, val circles: List<String>, val circleTags: Set<String>)

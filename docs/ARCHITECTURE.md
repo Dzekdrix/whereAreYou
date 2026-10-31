@@ -66,7 +66,7 @@ Contenu chiffré : une enveloppe **signée par le membre** avec sa clé d'identi
 ```
 avec `signature = Schnorr(clé d'identité, taggedHash("whereareyou/v2/message", tag || JSON interne))` et le JSON interne :
 ```json
-{"k":"<clé publique d'identité>", "n":"Prénom", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000}
+{"k":"<clé publique d'identité>", "n":"Prénom", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000, "gap":1800000}
 ```
 `{"k":"...", "off":true, "ts":...}` signale l'arrêt du partage (le marqueur disparaît chez les autres).
 
@@ -84,6 +84,23 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 - On ne peut pas exclure quelqu'un d'un cercle : il faut en recréer un.
 - Les secrets sont stockés dans les préférences privées de l'app (non sauvegardées). Amélioration prévue : chiffrement via Android Keystore.
 - Le partage s'arrête si le système tue l'app (pas de redémarrage automatique : nécessiterait l'autorisation « localisation en arrière-plan »).
+
+### Consommation d'énergie
+Le GPS et la radio sont les deux postes coûteux. Le service adapte son fonctionnement (`MotionPolicy`, testée unitairement) selon deux réglages :
+
+| Mode | Réglage (défaut) | Sources de position | Envois |
+|---|---|---|---|
+| **En mouvement** | 30 s → 3 h (5 min) | GPS précis (fournisseur « fused » si disponible, sinon GPS + réseau), échantillonné à la moitié du réglage, borné entre 15 s et 2 min | au rythme réglé, **seulement si on a bougé** (> 25 m ou au-delà de la précision) ; au **départ** après un arrêt, la première position à plus de 100 m est envoyée tout de suite |
+| **Immobile** (resté dans un rayon de 50 m pendant 3 min) | 5 min → 6 h (30 min) | **GPS coupé** ; attente du **capteur matériel de mouvement significatif** (quasi gratuit, sans services Google) ; positions Wi-Fi/antennes en secours toutes les 15 min (5 min sans capteur) + positions gratuites des autres apps | la position est seulement **confirmée** au rythme réglé (même position, horodatée « maintenant ») |
+
+Règles de cohérence entre les deux réglages :
+- la confirmation à l'arrêt n'est jamais plus fréquente que les envois en mouvement (les deux curseurs se poussent l'un l'autre) ;
+- l'échantillonnage GPS est plafonné à 2 min même si l'envoi est réglé à 3 h, sinon l'app ne remarquerait jamais l'arrêt et garderait le GPS allumé ;
+- chaque position annonce le **silence maximal** prévu avant la suivante (champ `gap`, = réglage « immobile ») : chez les autres, le marqueur ne s'estompe qu'en cas de retard sur cette annonce (+ 50 % et 2 min), et non au bout d'une durée fixe.
+
+Côté réseau, le signal de maintien des connexions WebSocket passe de 30 s à 2 min, pour réveiller moins souvent la radio.
+
+Évolution prévue : un « mode direct » à la demande (mises à jour rapides seulement quand quelqu'un regarde la carte).
 
 ## 4. Organisation du code
 

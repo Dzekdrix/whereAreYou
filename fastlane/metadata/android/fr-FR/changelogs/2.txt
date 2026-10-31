@@ -1,0 +1,7 @@
+- Interface : menu latéral, carte plein écran, infos d'un membre au toucher
+- Carte vectorielle nette (OpenFreeMap), thème sombre
+- Membres de chaque cercle : heure de mise à jour, précision
+- Positions signées par leur auteur (incompatible avec la 0.1)
+- Économie de batterie : GPS coupé à l'arrêt, 2 réglages d'actualisation
+- Partage activable depuis les Réglages
+- Barre de navigation transparente

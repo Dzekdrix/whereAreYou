@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit
  */
 class LocationRepository(private val store: Store) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val http = OkHttpClient.Builder().pingInterval(30, TimeUnit.SECONDS).build()
+    private val http = OkHttpClient.Builder().pingInterval(2, TimeUnit.MINUTES) /* fewer radio wake-ups */.build()
     private val pool = RelayPool(http, scope, ::onRelayMessage)
     val relayStatus: StateFlow<Map<String, RelayPool.State>> = pool.status
 
@@ -158,6 +158,7 @@ class LocationRepository(private val store: Store) {
             .put("lon", Math.round(fix.lon * 1e6) / 1e6)
             .put("acc", Math.round(fix.accuracy))
             .put("ts", fix.time)
+            .put("gap", fix.maxGapMs)
         send(c, payload)
     }
 
@@ -215,7 +216,7 @@ class LocationRepository(private val store: Store) {
                 perCircle.remove(tag)
             } else {
                 perCircle[tag] = p.optString("n", "?") to
-                    Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts)
+                    Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts, p.optLong("gap", 0))
             }
         }
         rebuildMembers()

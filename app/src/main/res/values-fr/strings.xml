@@ -54,8 +54,16 @@
     <string name="scan_prompt">Scannez une invitation whereAreYou</string>
 
     <string name="display_name">Votre nom (visible par vos cercles)</string>
-    <string name="interval">Fréquence de mise à jour</string>
-    <string name="interval_hint">Appliquée au prochain démarrage du partage.</string>
+    <string name="interval_moving">Actualisation de la position en mouvement</string>
+    <string name="interval_moving_hint">Position précise (GPS). Elle est envoyée à ce rythme, seulement si vous vous êtes réellement déplacé. Quand vous repartez après un arrêt, vos proches sont prévenus tout de suite.</string>
+    <string name="interval_still">Actualisation de la position quand l\'appareil est immobile</string>
+    <string name="interval_still_hint">Quand le capteur de mouvement indique que l\'appareil ne bouge pas, le GPS est coupé et votre position est seulement confirmée à ce rythme. Jamais plus souvent qu\'en mouvement.</string>
+    <string name="every">toutes les %1$s</string>
+    <string name="every_minute">toutes les minutes</string>
+    <string name="every_hour">toutes les heures</string>
+    <string name="duration_seconds">%1$d s</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
     <string name="relays">Relais</string>
     <string name="relays_hint">Une adresse par ligne (wss://…). Les positions sont chiffrées de bout en bout : les relais ne voient que des données illisibles. Utiliser plusieurs relais garde l\'app fonctionnelle si certains disparaissent.</string>
     <string name="save">Enregistrer</string>

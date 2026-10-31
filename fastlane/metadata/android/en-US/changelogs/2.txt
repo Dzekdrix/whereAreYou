@@ -1,0 +1,7 @@
+- New interface: side menu, full-screen map, member details on tap
+- Crisp vector map (OpenFreeMap), dark theme
+- Members of each circle: last update time, accuracy
+- Positions signed by their author (not compatible with 0.1)
+- Battery saving: GPS off while still, 2 update settings
+- Sharing switch in Settings
+- Transparent navigation bar

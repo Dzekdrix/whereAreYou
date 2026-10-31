@@ -55,8 +55,16 @@
     <string name="scan_prompt">Scan a whereAreYou invitation</string>
 
     <string name="display_name">Your name (visible to your circles)</string>
-    <string name="interval">Update interval</string>
-    <string name="interval_hint">Applied the next time sharing starts.</string>
+    <string name="interval_moving">Location update while moving</string>
+    <string name="interval_moving_hint">Precise location (GPS). Your position is sent at this pace, only if you actually moved. When you set off again after a stop, the others are told right away.</string>
+    <string name="interval_still">Location update while still</string>
+    <string name="interval_still_hint">When the motion sensor shows that the device does not move, the GPS is turned off and your position is only confirmed at this pace. Never more often than while moving.</string>
+    <string name="every">every %1$s</string>
+    <string name="every_minute">every minute</string>
+    <string name="every_hour">every hour</string>
+    <string name="duration_seconds">%1$d s</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
     <string name="relays">Relays</string>
     <string name="relays_hint">One address per line (wss://…). Positions are end-to-end encrypted: relays only see random-looking data. Using several relays keeps the app working if some disappear.</string>
     <string name="save">Save</string>

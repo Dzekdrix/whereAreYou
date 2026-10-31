@@ -18,9 +18,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,15 +39,65 @@ import io.github.whereareyou.BuildConfig
 import io.github.whereareyou.R
 import io.github.whereareyou.WhereApp
 import io.github.whereareyou.nostr.RelayPool
+import io.github.whereareyou.service.LocationService
+import kotlin.math.roundToInt
 
-private val INTERVALS = listOf(30 to "30 s", 60 to "1 min", 300 to "5 min", 900 to "15 min")
+/** Slider steps, in seconds. */
+private val MOVING_STEPS = listOf(30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800)
+private val STILL_STEPS = listOf(300, 600, 900, 1800, 3600, 7200, 10800, 14400, 21600)
+
+private fun nearestIndex(steps: List<Int>, seconds: Int) = steps.indices.minBy { kotlin.math.abs(steps[it] - seconds) }
 
 @Composable
-fun SettingsScreen(app: WhereApp, onMessage: (String) -> Unit) {
+private fun formatSeconds(seconds: Int): String = when {
+    seconds < 60 -> stringResource(R.string.duration_seconds, seconds)
+    seconds < 3600 -> stringResource(R.string.duration_minutes, seconds / 60)
+    else -> stringResource(R.string.duration_hours, seconds / 3600)
+}
+
+/** A titled slider over [steps] (seconds). */
+@Composable
+private fun IntervalSlider(title: String, hint: String, steps: List<Int>, seconds: Int, onChange: (Int) -> Unit) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(
+                when (seconds) {
+                    60 -> stringResource(R.string.every_minute)
+                    3600 -> stringResource(R.string.every_hour)
+                    else -> stringResource(R.string.every, formatSeconds(seconds))
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Slider(
+            value = nearestIndex(steps, seconds).toFloat(),
+            onValueChange = { onChange(steps[it.roundToInt().coerceIn(steps.indices)]) },
+            valueRange = 0f..(steps.size - 1).toFloat(),
+            steps = steps.size - 2,
+        )
+        Text(hint, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (String) -> Unit) {
     val context = LocalContext.current
     val store = app.store
     var name by remember { mutableStateOf(store.displayName) }
-    var interval by remember { mutableIntStateOf(store.intervalSeconds) }
+    var moving by remember { mutableIntStateOf(store.movingIntervalSeconds) }
+    var still by remember { mutableIntStateOf(store.stillIntervalSeconds) }
+    val sharing by app.repo.sharingActive.collectAsStateWithLifecycle()
+
+    // The two settings stay consistent: never confirm more often while still than while moving.
+    fun saveIntervals(newMoving: Int, newStill: Int) {
+        moving = newMoving
+        still = newStill
+        store.movingIntervalSeconds = newMoving
+        store.stillIntervalSeconds = newStill
+        LocationService.refresh(context, sharing)
+    }
     var relays by remember { mutableStateOf(store.relays.joinToString("\n")) }
     val status by app.repo.relayStatus.collectAsStateWithLifecycle()
 
@@ -67,20 +116,25 @@ fun SettingsScreen(app: WhereApp, onMessage: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Text(stringResource(R.string.interval), style = MaterialTheme.typography.titleMedium)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            INTERVALS.forEachIndexed { i, (seconds, label) ->
-                SegmentedButton(
-                    selected = interval == seconds,
-                    onClick = {
-                        interval = seconds
-                        store.intervalSeconds = seconds
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(i, INTERVALS.size),
-                ) { Text(label) }
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.start_sharing), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Switch(checked = sharing, onCheckedChange = { onToggleSharing() })
         }
-        Text(stringResource(R.string.interval_hint), style = MaterialTheme.typography.bodySmall)
+
+        IntervalSlider(
+            title = stringResource(R.string.interval_moving),
+            hint = stringResource(R.string.interval_moving_hint),
+            steps = MOVING_STEPS,
+            seconds = moving,
+            onChange = { m -> saveIntervals(m, if (still < m) STILL_STEPS.first { it >= m } else still) },
+        )
+        IntervalSlider(
+            title = stringResource(R.string.interval_still),
+            hint = stringResource(R.string.interval_still_hint),
+            steps = STILL_STEPS,
+            seconds = still,
+            onChange = { st -> saveIntervals(if (moving > st) MOVING_STEPS.last { it <= st } else moving, st) },
+        )
 
         HorizontalDivider()
         Text(stringResource(R.string.relays), style = MaterialTheme.typography.titleMedium)

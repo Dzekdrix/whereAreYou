@@ -3,6 +3,7 @@ package io.github.whereareyou.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -62,7 +64,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
+        window.isNavigationBarContrastEnforced = false
         handleIntent(intent)
         setContent {
             WhereTheme { WhereAreYouApp(app, pendingInvite) }
@@ -194,11 +199,11 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
             // The map goes under the status bar; other screens stay below the title bar.
-            Box(if (tab == Tab.MAP) Modifier.padding(bottom = padding.calculateBottomPadding()) else Modifier.padding(padding)) {
+            // The map goes under the status and navigation bars; other screens stay between them.
+            Box(if (tab == Tab.MAP) Modifier else Modifier.padding(padding)) {
                 when (tab) {
                     Tab.MAP -> MapScreen(
                         repo,
-                        onToggleSharing = toggleSharing,
                         onGoToCircles = { tab = Tab.CIRCLES },
                         focusMemberId = focusMember,
                         onFocusHandled = { focusMember = null },
@@ -208,7 +213,7 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                         focusMember = it
                         tab = Tab.MAP
                     })
-                    Tab.SETTINGS -> SettingsScreen(app, onMessage = { toast(it) })
+                    Tab.SETTINGS -> SettingsScreen(app, onToggleSharing = toggleSharing, onMessage = { toast(it) })
                 }
             }
         }

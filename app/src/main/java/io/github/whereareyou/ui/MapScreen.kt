@@ -10,6 +10,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,11 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +81,11 @@ import org.maplibre.geojson.Point
 import org.maplibre.turf.TurfConstants
 import org.maplibre.turf.TurfTransformation
 
-private const val STALE_MS = 15 * 60_000L
+/** Faded marker when no news for longer than announced (+ margin), or 25 min if unknown. */
+private const val DEFAULT_STALE_MS = 25 * 60_000L
+
+private fun Fix.isStale(now: Long) =
+    now - time > if (maxGapMs > 0) maxGapMs * 3 / 2 + 2 * 60_000L else DEFAULT_STALE_MS
 
 /** Free vector map styles from OpenFreeMap (OpenStreetMap data, no key, no account). */
 private const val STYLE_LIGHT = "https://tiles.openfreemap.org/styles/liberty"
@@ -165,7 +170,8 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
 
     private fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
 
-    fun update(members: List<Member>, selectedId: String?, now: Long) {
+    fun update(members: List<Member>, selectedId: String?, now: Long, bottomInsetPx: Int) {
+        map?.uiSettings?.setAttributionMargins(dp(8), 0, 0, bottomInsetPx + dp(8))
         this.members = members
         this.selectedId = selectedId
         this.now = now
@@ -192,7 +198,7 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
         val s = style ?: return
         val size = dp(40)
         val features = members.map { m ->
-            val stale = now - m.fix.time > STALE_MS
+            val stale = m.fix.isStale(now)
             val icon = "m-${m.id}-${m.name.hashCode()}-$stale"
             if (s.getImage(icon) == null) s.addImage(icon, avatarBitmap(m.id, m.name, size, stale))
             Feature.fromGeometry(Point.fromLngLat(m.fix.lon, m.fix.lat)).apply {
@@ -293,7 +299,6 @@ fun describeAge(res: android.content.res.Resources, m: Member, now: Long): Strin
 @Composable
 fun MapScreen(
     repo: LocationRepository,
-    onToggleSharing: () -> Unit,
     onGoToCircles: () -> Unit,
     focusMemberId: String?,
     onFocusHandled: () -> Unit,
@@ -302,7 +307,6 @@ fun MapScreen(
     val context = LocalContext.current
     val members by repo.members.collectAsStateWithLifecycle()
     val circles by repo.circles.collectAsStateWithLifecycle()
-    val sharing by repo.sharingActive.collectAsStateWithLifecycle()
     val ownFix by repo.ownFix.collectAsStateWithLifecycle()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -341,11 +345,13 @@ fun MapScreen(
     // Forget the selection when that member disappears.
     if (selectedId != null && members.none { it.id == selectedId }) selectedId = null
 
+    val bottomInset = WindowInsets.navigationBars.getBottom(LocalDensity.current)
+
     Box(Modifier.fillMaxSize()) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { holder.create() },
-            update = { holder.update(members, selectedId, now) },
+            update = { holder.update(members, selectedId, now, bottomInset) },
         )
 
         members.firstOrNull { it.id == selectedId }?.let { m ->
@@ -390,13 +396,6 @@ fun MapScreen(
                 }
             }
         }
-        ExtendedFloatingActionButton(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            onClick = onToggleSharing,
-            icon = { Icon(Icons.Filled.LocationOn, null) },
-            text = { Text(stringResource(if (sharing) R.string.stop_sharing else R.string.start_sharing)) },
-            containerColor = if (sharing) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-        )
     }
 }
 

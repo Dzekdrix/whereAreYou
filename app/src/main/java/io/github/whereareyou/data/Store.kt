@@ -20,9 +20,15 @@ class Store(context: Context) {
         get() = prefs.getString("name", null) ?: Build.MODEL
         set(value) = prefs.edit().putString("name", value.trim()).apply()
 
-    var intervalSeconds: Int
-        get() = prefs.getInt("interval", 60)
-        set(value) = prefs.edit().putInt("interval", value).apply()
+    /** Publication interval while moving. */
+    var movingIntervalSeconds: Int
+        get() = prefs.getInt("moving_interval", 5 * 60)
+        set(value) = prefs.edit().putInt("moving_interval", value).apply()
+
+    /** Confirmation interval while the device does not move. */
+    var stillIntervalSeconds: Int
+        get() = prefs.getInt("still_interval", 30 * 60)
+        set(value) = prefs.edit().putInt("still_interval", value).apply()
 
     var relays: List<String>
         get() = prefs.getString("relays", null)?.lines()?.filter { it.isNotBlank() } ?: DEFAULT_RELAYS
