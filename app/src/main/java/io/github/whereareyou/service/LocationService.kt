@@ -40,6 +40,7 @@ class LocationService : Service(), LocationListenerCompat {
     private lateinit var sensorManager: SensorManager
     private lateinit var policy: MotionPolicy
     private var appliedMode: MotionPolicy.Mode? = null
+    private var running = false
     private val handler = Handler(Looper.getMainLooper())
 
     /** Hardware "significant motion" sensor: wakes us up for almost no power when we start moving. */
@@ -69,10 +70,18 @@ class LocationService : Service(), LocationListenerCompat {
             movingSetting = { app.store.movingIntervalSeconds * 1000L },
             stillSetting = { app.store.stillIntervalSeconds * 1000L },
         )
-        ServiceCompat.startForeground(
-            this, NOTIFICATION_ID, buildNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-        )
+        try {
+            ServiceCompat.startForeground(
+                this, NOTIFICATION_ID, buildNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+        } catch (e: Exception) {
+            // Restarted from the background without the required permissions: give up quietly.
+            Log.w(TAG, "cannot start in foreground", e)
+            stopSelf()
+            return
+        }
+        running = true
         app.repo.acquire()
         app.repo.sharingActive.value = true
         applyMode()
@@ -82,23 +91,33 @@ class LocationService : Service(), LocationListenerCompat {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_STOP -> stopSelf()
+            ACTION_STOP -> {
+                // "Stop" button of the notification: a user decision, never restarted.
+                app.store.sharingWanted = false
+                KeepAlive.update(this)
+                stopSelf()
+            }
             ACTION_REFRESH -> {
                 // Settings changed: apply them now.
                 appliedMode = null
                 applyMode()
             }
         }
-        // Not sticky: restarting a location service from the background is not allowed
-        // without the "background location" permission (Android 10+ rules).
-        return START_NOT_STICKY
+        // Sticky (Android restarts us after killing the app) only with the "background location"
+        // setting: without it, Android does not allow restarting a location service from the background.
+        return if (KeepAlive.isActive(this)) START_STICKY else START_NOT_STICKY
     }
 
     override fun onDestroy() {
+        if (!running) {
+            super.onDestroy()
+            return
+        }
         handler.removeCallbacks(ticker)
         locationManager.removeUpdates(this)
         motionSensor?.let { sensorManager.cancelTriggerSensor(motionListener, it) }
-        app.repo.publishStop()
+        // Only tell the circles we stopped if the user did; otherwise we will be back.
+        if (!app.store.sharingWanted) app.repo.publishStop()
         app.repo.sharingActive.value = false
         app.repo.release()
         super.onDestroy()
@@ -206,10 +225,17 @@ class LocationService : Service(), LocationListenerCompat {
         private const val ACTION_STOP = "stop"
         private const val ACTION_REFRESH = "refresh"
 
-        fun start(context: Context) =
+        fun start(context: Context) {
+            (context.applicationContext as WhereApp).store.sharingWanted = true
             ContextCompat.startForegroundService(context, Intent(context, LocationService::class.java))
+            KeepAlive.update(context)
+        }
 
-        fun stop(context: Context) = context.stopService(Intent(context, LocationService::class.java))
+        fun stop(context: Context) {
+            (context.applicationContext as WhereApp).store.sharingWanted = false
+            context.stopService(Intent(context, LocationService::class.java))
+            KeepAlive.update(context)
+        }
 
         /** Applies changed settings to a running service (no-op if not sharing). */
         fun refresh(context: Context, running: Boolean) {

@@ -54,6 +54,18 @@
     <string name="scan_prompt">Scannez une invitation whereAreYou</string>
 
     <string name="display_name">Votre nom (visible par vos cercles)</string>
+    <string name="bg_title">Localisation en arrière-plan</string>
+    <string name="bg_hint">Relance le partage si Android ferme l\'application, et après un redémarrage du téléphone. Nécessite la localisation « Toujours autoriser » et l\'exemption d\'optimisation de la batterie.</string>
+    <string name="bg_rationale_title">Localisation « Toujours autoriser »</string>
+    <string name="bg_rationale_text">Pour relancer le partage sans que vous ouvriez l\'application, Android exige l\'accès à la localisation « Toujours autoriser ». Sur l\'écran suivant, choisissez « Toujours autoriser ».</string>
+    <string name="bg_continue">Continuer</string>
+    <string name="bg_need_location">Activez d\'abord « Partager ma position ».</string>
+    <string name="bg_location_refused">Sans « Toujours autoriser », le partage ne peut pas être relancé en arrière-plan.</string>
+    <string name="bg_battery_refused">Sans l\'exemption d\'optimisation de la batterie, Android empêche de relancer le partage.</string>
+    <string name="bg_enabled">Localisation en arrière-plan activée</string>
+    <string name="bg_incomplete">Une autorisation a été retirée : ce réglage est inactif.</string>
+    <string name="bg_fix">Corriger</string>
+    <string name="bg_oem">Certaines marques ferment quand même les applications : conseils pour votre téléphone (dontkillmyapp.com)</string>
     <string name="interval_moving">Actualisation de la position en mouvement</string>
     <string name="interval_moving_hint">Position précise (GPS). Elle est envoyée à ce rythme, seulement si vous vous êtes réellement déplacé. Quand vous repartez après un arrêt, vos proches sont prévenus tout de suite.</string>
     <string name="interval_still">Actualisation de la position quand l\'appareil est immobile</string>

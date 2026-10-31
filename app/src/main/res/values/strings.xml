@@ -55,6 +55,18 @@
     <string name="scan_prompt">Scan a whereAreYou invitation</string>
 
     <string name="display_name">Your name (visible to your circles)</string>
+    <string name="bg_title">Background location</string>
+    <string name="bg_hint">Restarts sharing if Android closes the app, and after the phone restarts. Requires location “Allow all the time” and an exemption from battery optimization.</string>
+    <string name="bg_rationale_title">Location “Allow all the time”</string>
+    <string name="bg_rationale_text">To restart sharing without you opening the app, Android requires location access “Allow all the time”. On the next screen, choose “Allow all the time”.</string>
+    <string name="bg_continue">Continue</string>
+    <string name="bg_need_location">First turn on “Share my location”.</string>
+    <string name="bg_location_refused">Without “Allow all the time”, sharing cannot be restarted in the background.</string>
+    <string name="bg_battery_refused">Without the battery optimization exemption, Android prevents restarting sharing.</string>
+    <string name="bg_enabled">Background location enabled</string>
+    <string name="bg_incomplete">A permission was removed: this setting is inactive.</string>
+    <string name="bg_fix">Fix</string>
+    <string name="bg_oem">Some brands still close apps: tips for your phone (dontkillmyapp.com)</string>
     <string name="interval_moving">Location update while moving</string>
     <string name="interval_moving_hint">Precise location (GPS). Your position is sent at this pace, only if you actually moved. When you set off again after a stop, the others are told right away.</string>
     <string name="interval_still">Location update while still</string>

@@ -83,7 +83,7 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 - Tout porteur du lien d'invitation peut rejoindre le cercle : il faut le transmettre par un canal de confiance (idéalement le QR code en personne).
 - On ne peut pas exclure quelqu'un d'un cercle : il faut en recréer un.
 - Les secrets sont stockés dans les préférences privées de l'app (non sauvegardées). Amélioration prévue : chiffrement via Android Keystore.
-- Le partage s'arrête si le système tue l'app (pas de redémarrage automatique : nécessiterait l'autorisation « localisation en arrière-plan »).
+- Sans le réglage « Localisation en arrière-plan », le partage s'arrête si le système tue l'app. Même avec, certaines surcouches constructeur (OnePlus, Xiaomi…) peuvent encore la fermer : l'app renvoie vers dontkillmyapp.com.
 
 ### Consommation d'énergie
 Le GPS et la radio sont les deux postes coûteux. Le service adapte son fonctionnement (`MotionPolicy`, testée unitairement) selon deux réglages :
@@ -101,6 +101,16 @@ Règles de cohérence entre les deux réglages :
 Côté réseau, le signal de maintien des connexions WebSocket passe de 30 s à 2 min, pour réveiller moins souvent la radio.
 
 Évolution prévue : un « mode direct » à la demande (mises à jour rapides seulement quand quelqu'un regarde la carte).
+
+### Localisation en arrière-plan (réglage optionnel)
+Android n'autorise une app à relancer un service de localisation depuis l'arrière-plan que si l'utilisateur a accordé la localisation **« Toujours autoriser »** et **exempté l'app de l'optimisation de la batterie**. Le réglage guide l'utilisateur vers ces deux autorisations (fenêtre d'explication, puis écrans système) et n'est actif que si les deux sont accordées.
+
+L'app mémorise que le partage est **voulu** (`sharingWanted`) ; un arrêt par l'utilisateur (interrupteur ou bouton de la notification) efface ce souhait et n'est jamais annulé. Tant que le partage est voulu, il est relancé :
+- par Android lui-même après avoir tué l'app (service *sticky*) ;
+- au redémarrage du téléphone et après une mise à jour de l'app (`KeepAliveReceiver`) ;
+- par un **chien de garde** : une alarme légère (inexacte, autorisée en veille) toutes les ~15 min.
+
+Quand le service est arrêté par le système, l'app n'envoie pas le message « arrêt du partage » aux cercles : la position reste affichée chez les autres jusqu'à la relance.
 
 ## 4. Organisation du code
 

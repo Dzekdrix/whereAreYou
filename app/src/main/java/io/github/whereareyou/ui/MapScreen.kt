@@ -132,6 +132,7 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
                 isCompassEnabled = false // replaced by our own button, styled like the others
                 attributionGravity = Gravity.BOTTOM or Gravity.START
             }
+            applyAttributionMargins() // the insets may have arrived before the map was ready
             m.addOnCameraMoveListener {
                 cameraTick.intValue++
                 bearing.floatValue = m.cameraPosition.bearing.toFloat()
@@ -168,10 +169,18 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
         }
     }
 
+    /** Keeps the "i" (credits) button above the transparent navigation bar. */
+    private var bottomInsetPx = 0
+
+    private fun applyAttributionMargins() {
+        map?.uiSettings?.setAttributionMargins(dp(8), 0, 0, bottomInsetPx + dp(8))
+    }
+
     private fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
 
     fun update(members: List<Member>, selectedId: String?, now: Long, bottomInsetPx: Int) {
-        map?.uiSettings?.setAttributionMargins(dp(8), 0, 0, bottomInsetPx + dp(8))
+        this.bottomInsetPx = bottomInsetPx
+        applyAttributionMargins()
         this.members = members
         this.selectedId = selectedId
         this.now = now

@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import io.github.whereareyou.data.LocationRepository
 import io.github.whereareyou.data.Store
+import io.github.whereareyou.service.KeepAlive
 import org.maplibre.android.MapLibre
 
 class WhereApp : Application() {
@@ -23,6 +24,10 @@ class WhereApp : Application() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL_SHARING, getString(R.string.channel_sharing), NotificationManager.IMPORTANCE_LOW)
         )
+
+        // Process restarted after being killed: resume sharing if the "background location" setting allows it.
+        KeepAlive.ensureRunning(this)
+        KeepAlive.update(this)
     }
 
     companion object {

@@ -121,6 +121,10 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
             Switch(checked = sharing, onCheckedChange = { onToggleSharing() })
         }
 
+        BackgroundLocationSetting(app, sharing, onMessage)
+
+        HorizontalDivider()
+
         IntervalSlider(
             title = stringResource(R.string.interval_moving),
             hint = stringResource(R.string.interval_moving_hint),

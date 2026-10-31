@@ -1,0 +1,2 @@
+- New "Background location" setting: sharing is restarted if Android closes the app, after a reboot or an update
+- Fix: the map credits button no longer goes under the navigation bar

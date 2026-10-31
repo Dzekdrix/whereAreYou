@@ -1,0 +1,2 @@
+- Nouveau réglage « Localisation en arrière-plan » : le partage est relancé si Android ferme l'application, après un redémarrage ou une mise à jour
+- Correction : le bouton des crédits de la carte ne passe plus sous la barre de navigation

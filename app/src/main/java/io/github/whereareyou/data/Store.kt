@@ -30,6 +30,16 @@ class Store(context: Context) {
         get() = prefs.getInt("still_interval", 30 * 60)
         set(value) = prefs.edit().putInt("still_interval", value).apply()
 
+    /** The user wants to share (switched on and not switched off since). Survives the app being killed. */
+    var sharingWanted: Boolean
+        get() = prefs.getBoolean("sharing_wanted", false)
+        set(value) = prefs.edit().putBoolean("sharing_wanted", value).apply()
+
+    /** "Background location" setting: restart sharing when Android kills the app. */
+    var backgroundLocation: Boolean
+        get() = prefs.getBoolean("background_location", false)
+        set(value) = prefs.edit().putBoolean("background_location", value).apply()
+
     var relays: List<String>
         get() = prefs.getString("relays", null)?.lines()?.filter { it.isNotBlank() } ?: DEFAULT_RELAYS
         set(value) = prefs.edit().putString("relays", value.joinToString("\n")).apply()
