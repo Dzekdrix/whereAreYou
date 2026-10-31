@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -29,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
@@ -106,6 +111,8 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
 
     /** Incremented on every camera move, so the info bubble follows its marker. */
     val cameraTick = mutableIntStateOf(0)
+    /** Map rotation in degrees (0 = north up). */
+    val bearing = mutableFloatStateOf(0f)
     var onMemberTap: (String?) -> Unit = {}
     var onReady: () -> Unit = {}
 
@@ -117,11 +124,13 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
             m.cameraPosition = CameraPosition.Builder().target(LatLng(46.6, 2.4)).zoom(4.5).build()
             m.uiSettings.apply {
                 isLogoEnabled = false
-                compassGravity = Gravity.TOP or Gravity.START
-                setCompassMargins(dp(12), dp(12), 0, 0)
+                isCompassEnabled = false // replaced by our own button, styled like the others
                 attributionGravity = Gravity.BOTTOM or Gravity.START
             }
-            m.addOnCameraMoveListener { cameraTick.intValue++ }
+            m.addOnCameraMoveListener {
+                cameraTick.intValue++
+                bearing.floatValue = m.cameraPosition.bearing.toFloat()
+            }
             m.addOnMapClickListener { latLng ->
                 val p = m.projection.toScreenLocation(latLng)
                 val hit = m.queryRenderedFeatures(p, LAYER_MEMBERS).firstOrNull()
@@ -221,6 +230,10 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
         map?.locationComponent?.takeIf { it.isLocationComponentActivated }?.cameraMode = CameraMode.NONE
     }
 
+    fun resetNorth() {
+        map?.animateCamera(CameraUpdateFactory.bearingTo(0.0), 300)
+    }
+
     fun centerOn(point: LatLng, zoom: Double = 16.0) {
         stopTracking()
         map?.animateCamera(CameraUpdateFactory.newLatLngZoom(point, zoom), 600)
@@ -284,6 +297,7 @@ fun MapScreen(
     onGoToCircles: () -> Unit,
     focusMemberId: String?,
     onFocusHandled: () -> Unit,
+    onOpenMenu: () -> Unit,
 ) {
     val context = LocalContext.current
     val members by repo.members.collectAsStateWithLifecycle()
@@ -339,8 +353,14 @@ fun MapScreen(
             holder.screenPosition(m)?.let { p -> MemberBubble(m, now, p) }
         }
 
+        SmallFloatingActionButton(
+            onClick = onOpenMenu,
+            modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(12.dp),
+        ) {
+            Icon(Icons.Filled.Menu, stringResource(R.string.menu))
+        }
         Column(
-            Modifier.align(Alignment.TopEnd).padding(12.dp),
+            Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SmallFloatingActionButton(onClick = { holder.centerOnMe(ownFix) }) {
@@ -349,9 +369,21 @@ fun MapScreen(
             SmallFloatingActionButton(onClick = { holder.fitAll(ownFix) }) {
                 Icon(painterResource(R.drawable.ic_fit_all), stringResource(R.string.fit_all))
             }
+            // Only when the map is rotated: the needle points north, a tap puts north back up.
+            val bearing = holder.bearing.floatValue
+            if (bearing in 0.5f..359.5f) {
+                SmallFloatingActionButton(onClick = { holder.resetNorth() }) {
+                    Icon(
+                        painterResource(R.drawable.ic_compass),
+                        stringResource(R.string.reset_north),
+                        modifier = Modifier.rotate(-bearing),
+                        tint = Color.Unspecified,
+                    )
+                }
+            }
         }
         if (circles.isEmpty()) {
-            Card(Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 12.dp, end = 72.dp)) {
+            Card(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 12.dp, top = 64.dp, end = 72.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Text(stringResource(R.string.no_circle_hint))
                     TextButton(onClick = onGoToCircles) { Text(stringResource(R.string.go_to_circles)) }

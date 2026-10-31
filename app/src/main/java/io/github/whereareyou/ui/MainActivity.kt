@@ -179,18 +179,22 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(tab.label)) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Filled.Menu, stringResource(R.string.menu))
-                        }
-                    },
-                )
+                // The map is full screen: no title bar there, the menu button floats over it.
+                if (tab != Tab.MAP) {
+                    TopAppBar(
+                        title = { Text(stringResource(tab.label)) },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Filled.Menu, stringResource(R.string.menu))
+                            }
+                        },
+                    )
+                }
             },
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
-            Box(Modifier.padding(padding)) {
+            // The map goes under the status bar; other screens stay below the title bar.
+            Box(if (tab == Tab.MAP) Modifier.padding(bottom = padding.calculateBottomPadding()) else Modifier.padding(padding)) {
                 when (tab) {
                     Tab.MAP -> MapScreen(
                         repo,
@@ -198,6 +202,7 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                         onGoToCircles = { tab = Tab.CIRCLES },
                         focusMemberId = focusMember,
                         onFocusHandled = { focusMember = null },
+                        onOpenMenu = { scope.launch { drawerState.open() } },
                     )
                     Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onShowMember = {
                         focusMember = it

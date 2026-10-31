@@ -13,6 +13,7 @@
 
     <string name="center_on_me">Centrer sur moi</string>
     <string name="fit_all">Voir tout le monde</string>
+    <string name="reset_north">Remettre le nord en haut</string>
     <string name="no_circle_hint">Créez ou rejoignez un cercle pour voir vos proches ici.</string>
     <string name="go_to_circles">Ouvrir les cercles</string>
     <string name="age_now">à l\'instant</string>

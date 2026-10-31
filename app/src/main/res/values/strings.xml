@@ -14,6 +14,7 @@
 
     <string name="center_on_me">Center on me</string>
     <string name="fit_all">Show everyone</string>
+    <string name="reset_north">Point north up</string>
     <string name="no_circle_hint">Create or join a circle to see your people here.</string>
     <string name="go_to_circles">Open circles</string>
     <string name="age_now">just now</string>
