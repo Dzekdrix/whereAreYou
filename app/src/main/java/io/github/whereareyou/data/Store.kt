@@ -20,6 +20,16 @@ class Store(context: Context) {
         get() = prefs.getString("name", null) ?: Build.MODEL
         set(value) = prefs.edit().putString("name", value.trim()).apply()
 
+    /** Emoji shown as our marker ("" = initial of the name). */
+    var emoji: String
+        get() = prefs.getString("emoji", "") ?: ""
+        set(value) = prefs.edit().putString("emoji", Emoji.sanitize(value)).apply()
+
+    /** Background color of our marker (null = automatic). */
+    var markerColor: Int?
+        get() = MarkerColor.parse(prefs.getString("marker_color", null))
+        set(value) = prefs.edit().putString("marker_color", value?.let { MarkerColor.format(it) }).apply()
+
     /** Publication interval while moving. */
     var movingIntervalSeconds: Int
         get() = prefs.getInt("moving_interval", 5 * 60)

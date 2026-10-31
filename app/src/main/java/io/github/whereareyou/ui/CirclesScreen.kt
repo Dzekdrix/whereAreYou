@@ -139,18 +139,20 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (S
                                 val me = ownFix
                                 if (circle.share && sharing && me != null) {
                                     MemberRow(
-                                        id = "me",
+                                        id = repo.myId,
                                         name = stringResource(R.string.me, repo.displayName),
                                         fix = me,
                                         now = now,
                                         onClick = null,
                                         avatarName = repo.displayName,
+                                        emoji = repo.emoji,
+                                        color = repo.markerColor,
                                     )
                                 } else if (!circle.share) {
                                     Hint(stringResource(R.string.not_sharing_here))
                                 }
                                 inCircle.forEach { m ->
-                                    MemberRow(m.id, m.name, m.fix, now, onClick = { onShowMember(m.id) })
+                                    MemberRow(m.id, m.name, m.fix, now, onClick = { onShowMember(m.id) }, emoji = m.emoji, color = m.color)
                                 }
                                 if (inCircle.isEmpty()) Hint(stringResource(R.string.no_members_yet))
                             }
@@ -207,9 +209,18 @@ private fun Hint(text: String) = Text(
 
 /** One member inside an expanded circle: name, last update, accuracy. */
 @Composable
-private fun MemberRow(id: String, name: String, fix: Fix, now: Long, onClick: (() -> Unit)?, avatarName: String = name) {
+private fun MemberRow(
+    id: String,
+    name: String,
+    fix: Fix,
+    now: Long,
+    onClick: (() -> Unit)?,
+    avatarName: String = name,
+    emoji: String = "",
+    color: Int? = null,
+) {
     val res = LocalContext.current.resources
-    val avatar = remember(id, avatarName) { avatarBitmap(id, avatarName, 96, false).asImageBitmap() }
+    val avatar = remember(id, avatarName, emoji, color) { avatarBitmap(id, avatarName, 96, false, emoji, color).asImageBitmap() }
     val time = DateUtils.formatSameDayTime(fix.time, now, DateFormat.SHORT, DateFormat.SHORT).toString()
     ListItem(
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,

@@ -54,6 +54,19 @@
     <string name="scan_prompt">Scannez une invitation whereAreYou</string>
 
     <string name="display_name">Votre nom (visible par vos cercles)</string>
+    <string name="marker_title">Mon point sur la carte</string>
+    <string name="marker_initial">Initiale de votre nom</string>
+    <string name="marker_emoji">Emoji, visible par vos cercles</string>
+    <string name="marker_choose_emoji">Emoji</string>
+    <string name="marker_choose_color">Couleur</string>
+    <string name="marker_emoji_title">Emoji de mon point</string>
+    <string name="marker_color_title">Couleur de mon point</string>
+    <string name="marker_color_auto">Automatique</string>
+    <string name="marker_color_custom">Couleur personnalisée</string>
+    <string name="marker_use_custom">Utiliser la couleur personnalisée</string>
+    <string name="marker_none">Aucun (initiale du nom)</string>
+    <string name="marker_type">…ou tapez n\'importe quel emoji</string>
+    <string name="marker_use">Utiliser</string>
     <string name="bg_title">Localisation en arrière-plan</string>
     <string name="bg_hint">Relance le partage si Android ferme l\'application, et après un redémarrage du téléphone. Nécessite la localisation « Toujours autoriser » et l\'exemption d\'optimisation de la batterie.</string>
     <string name="bg_rationale_title">Localisation « Toujours autoriser »</string>

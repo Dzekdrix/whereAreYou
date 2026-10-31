@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.whereareyou.R
 import io.github.whereareyou.data.Fix
+import io.github.whereareyou.data.MarkerColor
 import io.github.whereareyou.data.LocationRepository
 import io.github.whereareyou.data.Member
 import kotlinx.coroutines.delay
@@ -208,8 +209,8 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
         val size = dp(40)
         val features = members.map { m ->
             val stale = m.fix.isStale(now)
-            val icon = "m-${m.id}-${m.name.hashCode()}-$stale"
-            if (s.getImage(icon) == null) s.addImage(icon, avatarBitmap(m.id, m.name, size, stale))
+            val icon = "m-${m.id}-${m.name.hashCode()}-${m.emoji.hashCode()}-${m.color}-$stale"
+            if (s.getImage(icon) == null) s.addImage(icon, avatarBitmap(m.id, m.name, size, stale, m.emoji, m.color))
             Feature.fromGeometry(Point.fromLngLat(m.fix.lon, m.fix.lat)).apply {
                 addStringProperty("id", m.id)
                 addStringProperty("icon", icon)
@@ -224,7 +225,7 @@ private class MapHolder(private val context: Context, private val styleUrl: Stri
                 Point.fromLngLat(m.fix.lon, m.fix.lat), m.fix.accuracy.toDouble(), 64, TurfConstants.UNIT_METERS
             )
             Feature.fromGeometry(circle).apply {
-                addStringProperty("color", String.format("#%06X", memberColor(m.id) and 0xFFFFFF))
+                addStringProperty("color", MarkerColor.format(m.color ?: memberColor(m.id)))
             }
         }
         s.getSourceAs<GeoJsonSource>(SRC_ACCURACY)?.setGeoJson(FeatureCollection.fromFeatures(listOfNotNull(accuracy)))

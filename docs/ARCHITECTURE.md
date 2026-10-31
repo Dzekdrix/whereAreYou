@@ -66,8 +66,9 @@ Contenu chiffré : une enveloppe **signée par le membre** avec sa clé d'identi
 ```
 avec `signature = Schnorr(clé d'identité, taggedHash("whereareyou/v2/message", tag || JSON interne))` et le JSON interne :
 ```json
-{"k":"<clé publique d'identité>", "n":"Prénom", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000, "gap":1800000}
+{"k":"<clé publique d'identité>", "n":"Prénom", "e":"🦊", "c":"#1E88E5", "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000, "gap":1800000}
 ```
+`e` et `c` (facultatifs) sont l'emoji et la couleur de fond choisis pour le marqueur ; à la réception, l'emoji est réduit à un seul caractère et la couleur doit être de la forme `#RRGGBB`. Sans `c`, la couleur est déduite de l'identifiant du membre.
 `{"k":"...", "off":true, "ts":...}` signale l'arrêt du partage (le marqueur disparaît chez les autres).
 
 Les relais ne gardent que le **dernier** événement par (auteur, `d`) : c'est exactement la « dernière position connue ».

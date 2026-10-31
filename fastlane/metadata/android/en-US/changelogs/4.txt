@@ -1,0 +1,2 @@
+- Customize your marker on the map: an emoji and a background color, visible to your circles
+- A new name, emoji or color is sent right away

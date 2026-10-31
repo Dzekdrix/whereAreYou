@@ -44,6 +44,8 @@ class LocationRepository(private val store: Store) {
     val ownFix: StateFlow<Fix?> = _ownFix.asStateFlow()
 
     val displayName: String get() = store.displayName
+    val emoji: String get() = store.emoji
+    val markerColor: Int? get() = store.markerColor
 
     /** True while the LocationService is running. */
     val sharingActive = MutableStateFlow(false)
@@ -57,10 +59,16 @@ class LocationRepository(private val store: Store) {
      */
     private val identity = KeyPair.derive(seed, "member-identity")
     private val memberId = identity.publicHex
+
+    /** Our member id: also gives the color the others see for us. */
+    val myId: String get() = memberId
     private val authorKeys = ConcurrentHashMap<String, KeyPair>()
 
     private val lock = Any()
-    private val entries = HashMap<String, HashMap<String, Pair<String, Fix>>>() // memberId -> tag -> (name, fix)
+    /** What a member told one circle. */
+    private class Report(val name: String, val emoji: String, val color: Int?, val fix: Fix)
+
+    private val entries = HashMap<String, HashMap<String, Report>>() // memberId -> tag -> latest report
     private val lastSeen = HashMap<String, Long>() // "memberId|tag" -> ts of the latest accepted message (anti-replay)
     private val seenIds = LinkedHashSet<String>()
     private var users = 0
@@ -148,12 +156,23 @@ class LocationRepository(private val store: Store) {
         _circles.value.filter { it.share }.forEach { publishTo(it, fix) }
     }
 
+    /** Name sent in our last message (to avoid re-sending an unchanged name). */
+    @Volatile var lastPublishedName: String = ""
+        private set
+
+    /** Sends our last position again, e.g. so the circles see a new name or marker right away. */
+    fun republish() {
+        if (sharingActive.value) _ownFix.value?.let { publish(it) }
+    }
+
     /** Tells the circles we stopped sharing, so our marker disappears for them. */
     fun publishStop() = _circles.value.filter { it.share }.forEach { publishOff(it) }
 
     private fun publishTo(c: Circle, fix: Fix) {
         val payload = JSONObject()
-            .put("n", store.displayName)
+            .put("n", store.displayName.also { lastPublishedName = it })
+            .apply { store.emoji.takeIf { it.isNotEmpty() }?.let { put("e", it) } }
+            .apply { store.markerColor?.let { put("c", MarkerColor.format(it)) } }
             .put("lat", Math.round(fix.lat * 1e6) / 1e6)
             .put("lon", Math.round(fix.lon * 1e6) / 1e6)
             .put("acc", Math.round(fix.accuracy))
@@ -215,8 +234,12 @@ class LocationRepository(private val store: Store) {
             if (p.optBoolean("off")) {
                 perCircle.remove(tag)
             } else {
-                perCircle[tag] = p.optString("n", "?") to
-                    Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts, p.optLong("gap", 0))
+                perCircle[tag] = Report(
+                    name = p.optString("n", "?"),
+                    emoji = Emoji.sanitize(p.optString("e", "")),
+                    color = MarkerColor.parse(p.optString("c", "")),
+                    fix = Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts, p.optLong("gap", 0)),
+                )
             }
         }
         rebuildMembers()
@@ -227,8 +250,8 @@ class LocationRepository(private val store: Store) {
         val list = synchronized(lock) {
             entries.mapNotNull { (mid, perCircle) ->
                 val visible = perCircle.filterKeys { it in names }
-                val latest = visible.values.maxByOrNull { it.second.time } ?: return@mapNotNull null
-                Member(mid, latest.first, latest.second, visible.keys.mapNotNull { names[it] }.sorted(), visible.keys.toSet())
+                val latest = visible.values.maxByOrNull { it.fix.time } ?: return@mapNotNull null
+                Member(mid, latest.name, latest.fix, visible.keys.mapNotNull { names[it] }.sorted(), visible.keys.toSet(), latest.emoji, latest.color)
             }
         }
         _members.value = list.sortedBy { it.name.lowercase() }

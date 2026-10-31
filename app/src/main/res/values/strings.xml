@@ -55,6 +55,19 @@
     <string name="scan_prompt">Scan a whereAreYou invitation</string>
 
     <string name="display_name">Your name (visible to your circles)</string>
+    <string name="marker_title">My marker on the map</string>
+    <string name="marker_initial">Initial of your name</string>
+    <string name="marker_emoji">Emoji, visible to your circles</string>
+    <string name="marker_choose_emoji">Emoji</string>
+    <string name="marker_choose_color">Color</string>
+    <string name="marker_emoji_title">Emoji of my marker</string>
+    <string name="marker_color_title">Color of my marker</string>
+    <string name="marker_color_auto">Automatic</string>
+    <string name="marker_color_custom">Custom color</string>
+    <string name="marker_use_custom">Use custom color</string>
+    <string name="marker_none">None (initial of the name)</string>
+    <string name="marker_type">…or type any emoji</string>
+    <string name="marker_use">Use</string>
     <string name="bg_title">Background location</string>
     <string name="bg_hint">Restarts sharing if Android closes the app, and after the phone restarts. Requires location “Allow all the time” and an exemption from battery optimization.</string>
     <string name="bg_rationale_title">Location “Allow all the time”</string>

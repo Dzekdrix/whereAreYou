@@ -23,8 +23,43 @@ class Circle(val name: String, val secret: ByteArray, val share: Boolean) {
 /** A position report. [maxGapMs]: longest silence announced by its author before the next one (0 = unknown). */
 data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: Long, val maxGapMs: Long = 0)
 
-/** A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us. */
-data class Member(val id: String, val name: String, val fix: Fix, val circles: List<String>, val circleTags: Set<String>)
+/**
+ * A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us,
+ * [emoji] = chosen marker ("" = initial of the name).
+ */
+data class Member(
+    val id: String,
+    val name: String,
+    val fix: Fix,
+    val circles: List<String>,
+    val circleTags: Set<String>,
+    val emoji: String = "",
+    val color: Int? = null,
+)
+
+/** Marker background color chosen by a member, sent as "#RRGGBB" (null = automatic, derived from the member id). */
+object MarkerColor {
+    fun parse(text: String?): Int? {
+        val t = text?.trim() ?: return null
+        if (t.length != 7 || t[0] != '#') return null
+        return t.substring(1).toIntOrNull(16)?.let { it or 0xFF000000.toInt() }
+    }
+
+    fun format(color: Int): String = String.format("#%06X", color and 0xFFFFFF)
+}
+
+/** Marker emoji chosen by a member. */
+object Emoji {
+    /** Keeps a single character (emoji, flag, skin tone... included); "" if none. Also cleans received values. */
+    fun sanitize(text: String): String {
+        val s = text.trim().take(32)
+        if (s.isEmpty()) return ""
+        val it = java.text.BreakIterator.getCharacterInstance()
+        it.setText(s)
+        val end = it.next()
+        return if (end == java.text.BreakIterator.DONE) "" else s.substring(0, end)
+    }
+}
 
 /** Invitation link / QR code content: whereareyou://join/<base64url(json)> */
 object Invite {

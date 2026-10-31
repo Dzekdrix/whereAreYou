@@ -1,0 +1,2 @@
+- Personnalisez votre point sur la carte : un emoji et une couleur de fond, visibles par vos cercles
+- Un changement de nom, d'emoji ou de couleur est transmis tout de suite

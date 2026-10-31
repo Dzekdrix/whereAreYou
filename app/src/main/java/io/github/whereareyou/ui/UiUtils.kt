@@ -26,23 +26,29 @@ fun memberColor(id: String): Int {
     return android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.65f, 0.75f))
 }
 
-/** Round avatar with the member's initial, used as map marker. */
-fun avatarBitmap(id: String, name: String, sizePx: Int, stale: Boolean): Bitmap {
+/** Round avatar with the member's emoji, or the initial of their name; used as map marker. */
+fun avatarBitmap(id: String, name: String, sizePx: Int, stale: Boolean, emoji: String = "", color: Int? = null): Bitmap {
     val bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bmp)
     val r = sizePx / 2f
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     paint.color = android.graphics.Color.WHITE
     canvas.drawCircle(r, r, r, paint)
-    paint.color = memberColor(id)
+    paint.color = color ?: memberColor(id)
     if (stale) paint.alpha = 110
     canvas.drawCircle(r, r, r * 0.86f, paint)
     paint.color = android.graphics.Color.WHITE
-    paint.textSize = sizePx * 0.45f
     paint.textAlign = Paint.Align.CENTER
-    paint.isFakeBoldText = true
-    val initial = name.trim().take(1).uppercase().ifEmpty { "?" }
-    canvas.drawText(initial, r, r - (paint.descent() + paint.ascent()) / 2, paint)
+    if (stale) paint.alpha = 140
+    val label = if (emoji.isNotEmpty()) {
+        paint.textSize = sizePx * 0.52f
+        emoji
+    } else {
+        paint.textSize = sizePx * 0.45f
+        paint.isFakeBoldText = true
+        name.trim().take(1).uppercase().ifEmpty { "?" }
+    }
+    canvas.drawText(label, r, r - (paint.descent() + paint.ascent()) / 2, paint)
     return bmp
 }
 

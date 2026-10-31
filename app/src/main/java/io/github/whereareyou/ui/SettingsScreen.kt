@@ -22,6 +22,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import io.github.whereareyou.WhereApp
 import io.github.whereareyou.nostr.RelayPool
 import io.github.whereareyou.service.LocationService
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /** Slider steps, in seconds. */
 private val MOVING_STEPS = listOf(30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800)
@@ -99,6 +101,15 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
         LocationService.refresh(context, sharing)
     }
     var relays by remember { mutableStateOf(store.relays.joinToString("\n")) }
+    var emoji by remember { mutableStateOf(store.emoji) }
+    var markerColor by remember { mutableStateOf(store.markerColor) }
+
+    // A new name reaches the circles right away, once typing pauses.
+    LaunchedEffect(name) {
+        if (name.isBlank() || name.trim() == app.repo.lastPublishedName) return@LaunchedEffect
+        delay(1500)
+        app.repo.republish()
+    }
     val status by app.repo.relayStatus.collectAsStateWithLifecycle()
 
     Column(
@@ -114,6 +125,23 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
             label = { Text(stringResource(R.string.display_name)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
+        )
+
+        MarkerSetting(
+            memberId = app.repo.myId,
+            name = name,
+            emoji = emoji,
+            color = markerColor,
+            onEmoji = {
+                emoji = it
+                store.emoji = it
+                app.repo.republish() // the circles see the new marker right away
+            },
+            onColor = {
+                markerColor = it
+                store.markerColor = it
+                app.repo.republish()
+            },
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
