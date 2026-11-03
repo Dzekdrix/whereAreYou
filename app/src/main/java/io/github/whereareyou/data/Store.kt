@@ -50,6 +50,11 @@ class Store(context: Context) {
         get() = prefs.getBoolean("background_location", false)
         set(value) = prefs.edit().putBoolean("background_location", value).apply()
 
+    /** Battery level sent to the circles along with the position. */
+    var shareBattery: Boolean
+        get() = prefs.getBoolean("share_battery", false)
+        set(value) = prefs.edit().putBoolean("share_battery", value).apply()
+
     var relays: List<String>
         get() = prefs.getString("relays", null)?.lines()?.filter { it.isNotBlank() } ?: DEFAULT_RELAYS
         set(value) = prefs.edit().putString("relays", value.joinToString("\n")).apply()
@@ -58,14 +63,14 @@ class Store(context: Context) {
         val arr = JSONArray(prefs.getString("circles", "[]"))
         return (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
-            Circle(o.getString("name"), Crypto.unhex(o.getString("secret")), o.optBoolean("share", true))
+            Circle(o.getString("name"), Crypto.unhex(o.getString("secret")), o.optBoolean("share", true), o.optBoolean("visible", true))
         }
     }
 
     fun saveCircles(circles: List<Circle>) {
         val arr = JSONArray()
         circles.forEach {
-            arr.put(JSONObject().put("name", it.name).put("secret", Crypto.hex(it.secret)).put("share", it.share))
+            arr.put(JSONObject().put("name", it.name).put("secret", Crypto.hex(it.secret)).put("share", it.share).put("visible", it.visible))
         }
         prefs.edit().putString("circles", arr.toString()).apply()
     }

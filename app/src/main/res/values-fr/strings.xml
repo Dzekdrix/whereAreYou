@@ -98,4 +98,27 @@
     <string name="relay_disconnected">déconnecté</string>
     <string name="about">À propos</string>
     <string name="about_text">whereAreYou %1$s — logiciel libre (GPL-3.0 ou ultérieure). Pas de compte, pas de serveur à nous. Carte : OpenFreeMap © OpenMapTiles, données © contributeurs OpenStreetMap.</string>
+    <string name="tab_sources">Sources</string>
+    <string name="sources_intro">whereAreYou repose sur ces projets, services et spécifications libres. Touchez-en un pour ouvrir son site.</string>
+    <string name="src_license">Licence : %1$s</string>
+    <string name="src_osm">Carte du monde collaborative : toutes les données de la carte (routes, bâtiments, lieux).</string>
+    <string name="src_openfreemap">Hébergement gratuit des tuiles et styles de carte (clair et sombre), sans clé ni compte.</string>
+    <string name="src_openmaptiles">Schéma des tuiles vectorielles et styles de carte utilisés par OpenFreeMap.</string>
+    <string name="src_maplibre">Bibliothèque libre qui dessine la carte vectorielle et les marqueurs.</string>
+    <string name="src_nostr">Protocole ouvert dont les relais publics transportent les positions chiffrées : pas de serveur à nous.</string>
+    <string name="src_nostr_relays">Vos relais : %1$s</string>
+    <string name="src_bip340">Spécification des signatures Schnorr sur la courbe secp256k1, exigée par Nostr et utilisée pour signer chaque message.</string>
+    <string name="src_okhttp">Bibliothèque réseau : connexions WebSocket aux relais.</string>
+    <string name="src_zxing">Bibliothèque qui crée et lit les QR codes d\'invitation.</string>
+    <string name="src_zxing_embedded">Écran caméra pour scanner les QR codes, basé sur ZXing.</string>
+    <string name="src_androidx">Bibliothèques Android et boîte à outils de l\'interface.</string>
+    <string name="src_kotlin">Langage de programmation de l\'application et de ses tâches de fond.</string>
+    <string name="src_material_icons">Icônes de l\'interface.</string>
+    <string name="src_dontkillmyapp">Astuces par marque de téléphone pour que les applis continuent de tourner en arrière-plan.</string>
+    <string name="open_in_map_app">Ouvrir dans une appli de carte</string>
+    <string name="no_map_app">Aucune appli de carte trouvée sur cet appareil.</string>
+    <string name="share_battery">Partager mon niveau de batterie</string>
+    <string name="share_battery_hint">Vos cercles voient votre pourcentage de batterie à côté de votre nom, mis à jour avec votre position.</string>
+    <string name="battery_percent">%1$d %%</string>
+    <string name="show_circle_members">Afficher ses membres sur la carte</string>
 </resources>

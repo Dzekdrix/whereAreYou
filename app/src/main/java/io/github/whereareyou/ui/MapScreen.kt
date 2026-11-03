@@ -2,7 +2,11 @@ package io.github.whereareyou.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import android.content.pm.PackageManager
 import android.graphics.PointF
 import android.view.Gravity
@@ -12,8 +16,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,7 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -315,8 +325,13 @@ fun MapScreen(
     onOpenMenu: () -> Unit,
 ) {
     val context = LocalContext.current
-    val members by repo.members.collectAsStateWithLifecycle()
+    val allMembers by repo.members.collectAsStateWithLifecycle()
     val circles by repo.circles.collectAsStateWithLifecycle()
+    // Someone stays on the map as long as one of the circles we share with them is shown.
+    val members = remember(allMembers, circles) {
+        val shown = circles.filter { it.visible }.map { it.tag }.toSet()
+        allMembers.filter { m -> m.circleTags.any { it in shown } }
+    }
     val ownFix by repo.ownFix.collectAsStateWithLifecycle()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -409,47 +424,114 @@ fun MapScreen(
     }
 }
 
-/** Info bubble drawn above a member's marker, at screen position [p] (pixels). */
+/** Opens the member's position in a map app (geo: link), e.g. to get directions. */
+private fun openInMapApp(context: Context, m: Member) {
+    val uri = Uri.parse("geo:${m.fix.lat},${m.fix.lon}?q=${m.fix.lat},${m.fix.lon}(${Uri.encode(m.name)})")
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(context, R.string.no_map_app, Toast.LENGTH_LONG).show()
+    }
+}
+
+/** Triangle linking the bubble to the marker, pointing down (bubble above) or up (bubble below). */
 @Composable
-private fun MemberBubble(m: Member, now: Long, p: PointF) {
-    val res = LocalContext.current.resources
-    val color = MaterialTheme.colorScheme.surfaceContainerHigh
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
-            layout(placeable.width, placeable.height) {
-                // Bottom tip of the bubble just above the 40 dp marker.
-                placeable.place(
-                    (p.x - placeable.width / 2f).toInt(),
-                    (p.y - placeable.height - 22.dp.toPx()).toInt()
-                )
-            }
-        }
-    ) {
-        Card(
-            colors = CardDefaults.cardColors(containerColor = color),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            modifier = Modifier.widthIn(max = 260.dp),
-        ) {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                Text(m.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(describeAge(res, m, now), style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    m.circles.joinToString(", "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        Canvas(Modifier.size(width = 16.dp, height = 8.dp)) {
-            val path = Path().apply {
+private fun BubbleTip(color: Color, pointsDown: Boolean) {
+    Canvas(Modifier.size(width = 16.dp, height = 8.dp)) {
+        val path = Path().apply {
+            if (pointsDown) {
                 moveTo(0f, 0f)
                 lineTo(size.width, 0f)
                 lineTo(size.width / 2, size.height)
-                close()
+            } else {
+                moveTo(0f, size.height)
+                lineTo(size.width, size.height)
+                lineTo(size.width / 2, 0f)
             }
-            drawPath(path, color)
+            close()
+        }
+        drawPath(path, color)
+    }
+}
+
+/**
+ * Info bubble next to a member's marker, at screen position [p] (pixels).
+ * Above the marker when there is room below the status bar, otherwise below it; always inside the screen.
+ */
+@Composable
+private fun MemberBubble(m: Member, now: Long, p: PointF) {
+    val context = LocalContext.current
+    val res = context.resources
+    val color = MaterialTheme.colorScheme.surfaceContainerHigh
+    val density = LocalDensity.current
+    val topInset = WindowInsets.statusBars.getTop(density)
+    val bottomInset = WindowInsets.navigationBars.getBottom(density)
+    Layout(content = {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = color),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            modifier = Modifier.widthIn(max = 300.dp),
+        ) {
+            Row(
+                Modifier.padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f, fill = false)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            m.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        m.battery?.let {
+                            Spacer(Modifier.width(8.dp))
+                            BatteryBadge(it)
+                        }
+                    }
+                    Text(describeAge(res, m, now), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        m.circles.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = { openInMapApp(context, m) }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.open_in_map_app))
+                }
+            }
+        }
+        BubbleTip(color, pointsDown = true)
+        BubbleTip(color, pointsDown = false)
+    }) { measurables, constraints ->
+        val margin = 8.dp.roundToPx()
+        val gap = 22.dp.roundToPx() // from the marker center to the tip (marker: 40 dp)
+        val screenWidth = constraints.maxWidth
+        val screenHeight = constraints.maxHeight
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val card = measurables[0].measure(loose.copy(maxWidth = (screenWidth - 2 * margin).coerceAtLeast(0)))
+        val tipDown = measurables[1].measure(loose)
+        val tipUp = measurables[2].measure(loose)
+        val tipHeight = tipDown.height
+
+        // Usable area: between the status bar and the navigation bar.
+        val top = topInset + margin
+        val bottom = screenHeight - bottomInset - margin
+        val y = p.y.toInt()
+        val roomAbove = y - gap - tipHeight - top
+        val roomBelow = bottom - (y + gap + tipHeight)
+        val above = roomAbove >= card.height || roomAbove >= roomBelow
+
+        val wantedY = if (above) y - gap - tipHeight - card.height else y + gap + tipHeight
+        val cardY = wantedY.coerceIn(top, maxOf(top, bottom - card.height))
+        val cardX = (p.x - card.width / 2f).toInt().coerceIn(margin, maxOf(margin, screenWidth - margin - card.width))
+
+        layout(screenWidth, screenHeight) {
+            card.place(cardX, cardY)
+            val corner = 12.dp.roundToPx() // keep the tip off the rounded corners
+            val tipX = (p.x - tipDown.width / 2f).toInt()
+                .coerceIn(cardX + corner, maxOf(cardX + corner, cardX + card.width - corner - tipDown.width))
+            if (above) tipDown.place(tipX, cardY + card.height) else tipUp.place(tipX, cardY - tipHeight)
         }
     }
 }

@@ -9,15 +9,17 @@ private val SALT = "whereareyou-v1".toByteArray()
  * A circle (group) is just a shared random secret. Everyone holding the secret
  * can publish and read encrypted positions in the circle.
  * Sharing with a single person = a circle of two.
+ * [share]: we publish our position here; [visible]: its members are shown on our map.
  */
-class Circle(val name: String, val secret: ByteArray, val share: Boolean) {
+class Circle(val name: String, val secret: ByteArray, val share: Boolean, val visible: Boolean = true) {
     /** Public, random-looking identifier used as the Nostr "d" tag. Reveals nothing about the circle. */
     val tag: String = Crypto.hex(Crypto.hkdf(secret, SALT, "tag".toByteArray(), 16))
 
     /** AES-256 key used to encrypt positions. */
     val key: ByteArray = Crypto.hkdf(secret, SALT, "enc".toByteArray(), 32)
 
-    fun copy(name: String = this.name, share: Boolean = this.share) = Circle(name, secret, share)
+    fun copy(name: String = this.name, share: Boolean = this.share, visible: Boolean = this.visible) =
+        Circle(name, secret, share, visible)
 }
 
 /** A position report. [maxGapMs]: longest silence announced by its author before the next one (0 = unknown). */
@@ -25,7 +27,7 @@ data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: 
 
 /**
  * A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us,
- * [emoji] = chosen marker ("" = initial of the name).
+ * [emoji] = chosen marker ("" = initial of the name), [battery] = battery level in % (null = not shared).
  */
 data class Member(
     val id: String,
@@ -35,6 +37,7 @@ data class Member(
     val circleTags: Set<String>,
     val emoji: String = "",
     val color: Int? = null,
+    val battery: Int? = null,
 )
 
 /** Marker background color chosen by a member, sent as "#RRGGBB" (null = automatic, derived from the member id). */

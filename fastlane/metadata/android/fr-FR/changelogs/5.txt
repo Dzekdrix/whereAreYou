@@ -1,0 +1,4 @@
+- Nouvelle page « Sources » : les projets et services utilisés par l'application, avec un lien vers chacun
+- Fiche d'un membre sur la carte : une flèche ouvre sa position dans votre appli de carte, pour lancer un itinéraire
+- Réglage « Partager mon niveau de batterie » : le pourcentage s'affiche à côté de votre nom chez vos cercles
+- Chaque cercle peut masquer ses membres sur la carte (un membre reste visible s'il est aussi dans un autre cercle affiché)

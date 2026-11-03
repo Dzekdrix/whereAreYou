@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,7 +95,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Tab(val label: Int) { MAP(R.string.tab_map), CIRCLES(R.string.tab_circles), SETTINGS(R.string.tab_settings) }
+private enum class Tab(val label: Int) {
+    MAP(R.string.tab_map), CIRCLES(R.string.tab_circles), SETTINGS(R.string.tab_settings), SOURCES(R.string.tab_sources)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,6 +169,7 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                                 when (t) {
                                     Tab.MAP -> Icons.Filled.Place
                                     Tab.CIRCLES -> Icons.Filled.AccountCircle
+                                    Tab.SOURCES -> Icons.Filled.Info
                                     Tab.SETTINGS -> Icons.Filled.Settings
                                 },
                                 contentDescription = null
@@ -213,6 +217,7 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                         focusMember = it
                         tab = Tab.MAP
                     })
+                    Tab.SOURCES -> SourcesScreen(app.store.relays)
                     Tab.SETTINGS -> SettingsScreen(app, onToggleSharing = toggleSharing, onMessage = { toast(it) })
                 }
             }

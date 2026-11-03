@@ -1,0 +1,4 @@
+- New "Sources" page: the projects and services the app uses, with a link to each
+- Member info on the map: an arrow opens their position in your map app, to get directions
+- "Share my battery level" setting: the percentage shows next to your name for your circles
+- Each circle can hide its members on the map (a member stays visible if they are also in another shown circle)

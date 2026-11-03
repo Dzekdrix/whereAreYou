@@ -103,6 +103,7 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
     var relays by remember { mutableStateOf(store.relays.joinToString("\n")) }
     var emoji by remember { mutableStateOf(store.emoji) }
     var markerColor by remember { mutableStateOf(store.markerColor) }
+    var shareBattery by remember { mutableStateOf(store.shareBattery) }
 
     // A new name reaches the circles right away, once typing pauses.
     LaunchedEffect(name) {
@@ -150,6 +151,18 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
         }
 
         BackgroundLocationSetting(app, sharing, onMessage)
+
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.share_battery), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Switch(checked = shareBattery, onCheckedChange = {
+                    shareBattery = it
+                    store.shareBattery = it
+                    app.repo.republish() // the circles see the change right away
+                })
+            }
+            Text(stringResource(R.string.share_battery_hint), style = MaterialTheme.typography.bodySmall)
+        }
 
         HorizontalDivider()
 

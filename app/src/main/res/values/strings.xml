@@ -99,4 +99,27 @@
     <string name="relay_disconnected">disconnected</string>
     <string name="about">About</string>
     <string name="about_text">whereAreYou %1$s — free software (GPL-3.0-or-later). No account, no server of our own. Map: OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors.</string>
+    <string name="tab_sources">Sources</string>
+    <string name="sources_intro">whereAreYou is built on these free projects, services and specifications. Tap one to open its website.</string>
+    <string name="src_license">License: %1$s</string>
+    <string name="src_osm">Collaborative world map: all the map data (roads, buildings, places).</string>
+    <string name="src_openfreemap">Free map tile hosting and styles (light and dark), with no key and no account.</string>
+    <string name="src_openmaptiles">Vector tile schema and map styles used by OpenFreeMap.</string>
+    <string name="src_maplibre">Open source library that draws the vector map and the markers.</string>
+    <string name="src_nostr">Open protocol whose public relays carry the encrypted positions: no server of our own.</string>
+    <string name="src_nostr_relays">Your relays: %1$s</string>
+    <string name="src_bip340">Schnorr signature specification on the secp256k1 curve, required by Nostr and used to sign every message.</string>
+    <string name="src_okhttp">Network library: WebSocket connections to the relays.</string>
+    <string name="src_zxing">Library that generates and reads the invitation QR codes.</string>
+    <string name="src_zxing_embedded">Camera screen to scan QR codes, based on ZXing.</string>
+    <string name="src_androidx">Android libraries and user interface toolkit.</string>
+    <string name="src_kotlin">Programming language of the app and its background tasks.</string>
+    <string name="src_material_icons">Icons of the interface.</string>
+    <string name="src_dontkillmyapp">Tips for each phone brand to keep apps running in the background.</string>
+    <string name="open_in_map_app">Open in a map app</string>
+    <string name="no_map_app">No map app found on this device.</string>
+    <string name="share_battery">Share my battery level</string>
+    <string name="share_battery_hint">Your circles see your battery percentage next to your name, updated with your position.</string>
+    <string name="battery_percent">%1$d%%</string>
+    <string name="show_circle_members">Show its members on the map</string>
 </resources>

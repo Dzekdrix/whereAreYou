@@ -71,6 +71,8 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (S
     val members by repo.members.collectAsStateWithLifecycle()
     val sharing by repo.sharingActive.collectAsStateWithLifecycle()
     val ownFix by repo.ownFix.collectAsStateWithLifecycle()
+    // Members shown on the map: those sharing at least one visible circle with us.
+    val shownTags = circles.filter { it.visible }.map { it.tag }.toSet()
     var expanded by rememberSaveable { mutableStateOf(setOf<String>()) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -133,6 +135,10 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (S
                             Text(stringResource(R.string.share_in_circle), Modifier.weight(1f))
                             Switch(checked = circle.share, onCheckedChange = { repo.setShare(circle, it) })
                         }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.show_circle_members), Modifier.weight(1f))
+                            Switch(checked = circle.visible, onCheckedChange = { repo.setVisible(circle, it) })
+                        }
                         AnimatedVisibility(isOpen) {
                             Column {
                                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -147,12 +153,20 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (S
                                         avatarName = repo.displayName,
                                         emoji = repo.emoji,
                                         color = repo.markerColor,
+                                        battery = repo.sharedBattery,
                                     )
                                 } else if (!circle.share) {
                                     Hint(stringResource(R.string.not_sharing_here))
                                 }
                                 inCircle.forEach { m ->
-                                    MemberRow(m.id, m.name, m.fix, now, onClick = { onShowMember(m.id) }, emoji = m.emoji, color = m.color)
+                                    val onMap = m.circleTags.any { it in shownTags }
+                                    MemberRow(
+                                        m.id, m.name, m.fix, now,
+                                        onClick = if (onMap) ({ onShowMember(m.id) }) else null,
+                                        emoji = m.emoji,
+                                        color = m.color,
+                                        battery = m.battery,
+                                    )
                                 }
                                 if (inCircle.isEmpty()) Hint(stringResource(R.string.no_members_yet))
                             }
@@ -218,6 +232,7 @@ private fun MemberRow(
     avatarName: String = name,
     emoji: String = "",
     color: Int? = null,
+    battery: Int? = null,
 ) {
     val res = LocalContext.current.resources
     val avatar = remember(id, avatarName, emoji, color) { avatarBitmap(id, avatarName, 96, false, emoji, color).asImageBitmap() }
@@ -226,7 +241,15 @@ private fun MemberRow(
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         leadingContent = { Image(avatar, null, Modifier.size(36.dp)) },
-        headlineContent = { Text(name) },
+        headlineContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(name, Modifier.weight(1f, fill = false))
+                battery?.let {
+                    Spacer(Modifier.width(8.dp))
+                    BatteryBadge(it)
+                }
+            }
+        },
         supportingContent = {
             Column {
                 Text(stringResource(R.string.updated, formatAge(res, fix.time, now), time))

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,12 +14,28 @@ android {
         applicationId = "io.github.dzekdrix.whereareyou"
         minSdk = 29 // Android 10
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.3.0"
+    }
+
+    // Release key: local.properties may contain "signing.properties=<path>" pointing to a file with
+    // storeFile, storePassword, keyAlias, keyPassword. Kept outside the repository; without it, release is unsigned.
+    val signingFile = Properties().apply {
+        rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }.getProperty("signing.properties")?.let { file(it) }?.takeIf { it.exists() }
+    val releaseSigning = signingFile?.let { f ->
+        val p = Properties().apply { f.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = file(p.getProperty("storeFile"))
+            storePassword = p.getProperty("storePassword")
+            keyAlias = p.getProperty("keyAlias")
+            keyPassword = p.getProperty("keyPassword")
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = releaseSigning
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
