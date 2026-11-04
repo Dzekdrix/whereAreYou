@@ -27,7 +27,7 @@ data class Fix(val lat: Double, val lon: Double, val accuracy: Float, val time: 
 
 /**
  * A person seen on the map. [circles] = names (for display), [circleTags] = the circles they share with us,
- * [emoji] = chosen marker ("" = initial of the name), [battery] = battery level in % (null = not shared).
+ * [emoji] = chosen marker ("" = initial of the name), [battery] = battery state (null = not shared).
  */
 data class Member(
     val id: String,
@@ -37,7 +37,7 @@ data class Member(
     val circleTags: Set<String>,
     val emoji: String = "",
     val color: Int? = null,
-    val battery: Int? = null,
+    val battery: BatteryState? = null,
 )
 
 /** Marker background color chosen by a member, sent as "#RRGGBB" (null = automatic, derived from the member id). */

@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
+import io.github.whereareyou.data.BatteryState
 import io.github.whereareyou.data.Fix
 import kotlinx.coroutines.delay
 import java.text.DateFormat
@@ -237,7 +238,7 @@ private fun MemberRow(
     avatarName: String = name,
     emoji: String = "",
     color: Int? = null,
-    battery: Int? = null,
+    battery: BatteryState? = null,
 ) {
     val res = LocalContext.current.resources
     val avatar = remember(id, avatarName, emoji, color) { avatarBitmap(id, avatarName, 96, false, emoji, color).asImageBitmap() }

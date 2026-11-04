@@ -3,8 +3,10 @@ package io.github.whereareyou.service
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.hardware.Sensor
 import android.hardware.SensorManager
@@ -25,6 +27,7 @@ import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
 import io.github.whereareyou.R
 import io.github.whereareyou.WhereApp
+import io.github.whereareyou.data.BatteryState
 import io.github.whereareyou.data.Fix
 import io.github.whereareyou.data.MotionPolicy
 import io.github.whereareyou.ui.MainActivity
@@ -50,6 +53,17 @@ class LocationService : Service(), LocationListenerCompat {
             Log.i(TAG, "motion detected")
             policy.onMotion(System.currentTimeMillis())
             applyMode()
+        }
+    }
+
+    /** Plugged in or not, as last seen (null = not known yet). */
+    private var charging: Boolean? = null
+    /** Sends our position again when the phone is plugged in or unplugged, so the circles see it right away. */
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val now = BatteryState.from(intent)?.charging ?: return
+            if (charging != null && now != charging && app.store.shareBattery) app.repo.republish()
+            charging = now
         }
     }
 
@@ -87,6 +101,7 @@ class LocationService : Service(), LocationListenerCompat {
         applyMode()
         publishRecentCachedFix()
         handler.postDelayed(ticker, TICK_MS)
+        ContextCompat.registerReceiver(this, batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -114,6 +129,7 @@ class LocationService : Service(), LocationListenerCompat {
             return
         }
         handler.removeCallbacks(ticker)
+        unregisterReceiver(batteryReceiver)
         locationManager.removeUpdates(this)
         motionSensor?.let { sensorManager.cancelTriggerSensor(motionListener, it) }
         // Only tell the circles we stopped if the user did; otherwise we will be back.

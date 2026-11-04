@@ -1,0 +1,1 @@
+- Battery: a lightning bolt shows while the phone is plugged in, and the change is sent to the circles right away

@@ -3,7 +3,10 @@ package io.github.whereareyou
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.os.BatteryManager
+import android.content.Intent
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
+import io.github.whereareyou.data.BatteryState
 import io.github.whereareyou.data.LocationRepository
 import io.github.whereareyou.data.Store
 import io.github.whereareyou.service.KeepAlive
@@ -18,7 +21,7 @@ class WhereApp : Application() {
     override fun onCreate() {
         super.onCreate()
         store = Store(this)
-        repo = LocationRepository(store) { batteryLevel() }
+        repo = LocationRepository(store) { batteryState() }
 
         MapLibre.getInstance(this)
 
@@ -31,9 +34,10 @@ class WhereApp : Application() {
         KeepAlive.update(this)
     }
 
-    /** Current battery level in %, or null if unknown. */
-    private fun batteryLevel(): Int? =
-        getSystemService(BatteryManager::class.java)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)?.takeIf { it in 0..100 }
+    /** Current battery state (read from the sticky ACTION_BATTERY_CHANGED broadcast), or null if unknown. */
+    private fun batteryState(): BatteryState? =
+        ContextCompat.registerReceiver(this, null, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+            ?.let { BatteryState.from(it) }
 
     companion object {
         const val CHANNEL_SHARING = "sharing"

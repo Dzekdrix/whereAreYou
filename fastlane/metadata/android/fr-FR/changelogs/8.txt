@@ -1,0 +1,1 @@
+- Batterie : un éclair s'affiche quand le téléphone est branché, et le changement est envoyé aussitôt aux cercles

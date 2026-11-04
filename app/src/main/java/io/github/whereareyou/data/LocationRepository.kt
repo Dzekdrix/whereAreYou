@@ -25,10 +25,10 @@ import java.util.concurrent.TimeUnit
  *  - each circle has a secret -> public tag "d" + AES key
  *  - each member publishes a Nostr event kind 30078, tag d=<circle tag>,
  *    signed with a key derived for this circle only (circles are not linkable)
- *  - content = AES-GCM(JSON {id, n, lat, lon, acc, ts, b?})
+ *  - content = AES-GCM(JSON {id, n, lat, lon, acc, ts, b?, ch?})
  *  - relays keep only the latest event per (author, d): it is the "last known position"
  */
-class LocationRepository(private val store: Store, private val batteryLevel: () -> Int?) {
+class LocationRepository(private val store: Store, private val batteryState: () -> BatteryState?) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val http = OkHttpClient.Builder().pingInterval(2, TimeUnit.MINUTES) /* fewer radio wake-ups */.build()
     private val pool = RelayPool(http, scope, ::onRelayMessage)
@@ -46,8 +46,8 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
     val displayName: String get() = store.displayName
     val emoji: String get() = store.emoji
     val markerColor: Int? get() = store.markerColor
-    /** Our battery level as the others see it (null = not shared). */
-    val sharedBattery: Int? get() = if (store.shareBattery) batteryLevel() else null
+    /** Our battery as the others see it (null = not shared). */
+    val sharedBattery: BatteryState? get() = if (store.shareBattery) batteryState() else null
 
     /** True while the LocationService is running. */
     val sharingActive = MutableStateFlow(false)
@@ -71,7 +71,7 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
 
     private val lock = Any()
     /** What a member told one circle. */
-    private class Report(val name: String, val emoji: String, val color: Int?, val battery: Int?, val fix: Fix)
+    private class Report(val name: String, val emoji: String, val color: Int?, val battery: BatteryState?, val fix: Fix)
 
     private val entries = HashMap<String, HashMap<String, Report>>() // memberId -> tag -> latest report
     private val lastSeen = HashMap<String, Long>() // "memberId|tag" -> ts of the latest accepted message (anti-replay)
@@ -234,7 +234,12 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
             .put("n", store.displayName.also { lastPublishedName = it })
             .apply { store.emoji.takeIf { it.isNotEmpty() }?.let { put("e", it) } }
             .apply { store.markerColor?.let { put("c", MarkerColor.format(it)) } }
-            .apply { sharedBattery?.let { put("b", it) } }
+            .apply {
+                sharedBattery?.let {
+                    put("b", it.level)
+                    if (it.charging) put("ch", true)
+                }
+            }
             .put("lat", Math.round(fix.lat * 1e6) / 1e6)
             .put("lon", Math.round(fix.lon * 1e6) / 1e6)
             .put("acc", Math.round(fix.accuracy))
@@ -304,7 +309,7 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
                     name = p.optString("n", "?"),
                     emoji = Emoji.sanitize(p.optString("e", "")),
                     color = MarkerColor.parse(p.optString("c", "")),
-                    battery = p.optInt("b", -1).takeIf { it in 0..100 },
+                    battery = p.optInt("b", -1).takeIf { it in 0..100 }?.let { BatteryState(it, p.optBoolean("ch")) },
                     fix = Fix(p.getDouble("lat"), p.getDouble("lon"), p.optDouble("acc", 0.0).toFloat(), ts, p.optLong("gap", 0)),
                 )
             }
