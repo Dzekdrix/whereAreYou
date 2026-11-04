@@ -1,0 +1,5 @@
+- Password-encrypted backup (Settings → Backup): get your identity, circles and settings back after reinstalling or on a new phone, without appearing as a new member
+- Button to generate a strong password
+- When importing, you can notify your former circles so your old marker disappears
+- A member's info card no longer goes off screen (it moves below the marker at the top of the screen)
+- "Sources" is now below "Settings" in the menu

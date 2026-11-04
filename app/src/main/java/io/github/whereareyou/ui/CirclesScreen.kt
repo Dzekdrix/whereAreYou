@@ -66,7 +66,7 @@ import io.github.whereareyou.data.Invite
 import io.github.whereareyou.data.LocationRepository
 
 @Composable
-fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (String) -> Unit) {
+fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onRestore: () -> Unit, onShowMember: (String) -> Unit) {
     val circles by repo.circles.collectAsStateWithLifecycle()
     val members by repo.members.collectAsStateWithLifecycle()
     val sharing by repo.sharingActive.collectAsStateWithLifecycle()
@@ -102,6 +102,10 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onShowMember: (S
                 modifier = Modifier.padding(24.dp),
                 style = MaterialTheme.typography.bodyLarge,
             )
+            // Right after reinstalling: get the circles and the same identity back.
+            OutlinedButton(onClick = onRestore, modifier = Modifier.padding(horizontal = 24.dp)) {
+                Text(stringResource(R.string.backup_restore_hint))
+            }
         }
         LazyColumn(
             Modifier.fillMaxSize(),

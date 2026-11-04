@@ -1,0 +1,5 @@
+- Sauvegarde chiffrée par mot de passe (Réglages → Sauvegarde) : retrouvez votre identité, vos cercles et vos réglages après une réinstallation ou sur un nouveau téléphone, sans apparaître comme un nouveau membre
+- Bouton pour générer un mot de passe fort
+- À l'import, possibilité de prévenir vos anciens cercles pour que votre ancien point disparaisse
+- La fiche d'un membre ne déborde plus de l'écran (elle passe sous le marqueur en haut de l'écran)
+- « Sources » est désormais sous « Réglages » dans le menu

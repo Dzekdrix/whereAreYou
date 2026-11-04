@@ -42,6 +42,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,6 +114,8 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
     var focusMember by remember { mutableStateOf<String?>(null) }
 
     fun toast(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
+    val restoreBackup = rememberBackupImport(app) { toast(it) }
+    val restored by repo.restored.collectAsStateWithLifecycle()
 
     val permissions = buildList {
         add(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -213,12 +216,15 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                         onFocusHandled = { focusMember = null },
                         onOpenMenu = { scope.launch { drawerState.open() } },
                     )
-                    Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onShowMember = {
+                    Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onRestore = restoreBackup, onShowMember = {
                         focusMember = it
                         tab = Tab.MAP
                     })
                     Tab.SOURCES -> SourcesScreen(app.store.relays)
-                    Tab.SETTINGS -> SettingsScreen(app, onToggleSharing = toggleSharing, onMessage = { toast(it) })
+                    // Restoring a backup changes the settings: the screen reloads them.
+                    Tab.SETTINGS -> key(restored) {
+                        SettingsScreen(app, onToggleSharing = toggleSharing, onRestore = restoreBackup, onMessage = { toast(it) })
+                    }
                 }
             }
         }

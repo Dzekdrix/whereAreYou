@@ -44,7 +44,7 @@ Un cercle est un **secret aléatoire de 32 octets** + un nom. Il est transmis pa
 - `key` (32 octets) : clé AES-256-GCM.
 
 ### Identité
-Chaque appareil génère une graine aléatoire de 32 octets qui ne quitte jamais l'appareil (exclue des sauvegardes). Pour **chaque cercle**, une clé de signature Nostr différente est dérivée (`HKDF(graine, "author:" + tag)`) : un relais ne peut pas relier vos différents cercles entre eux.
+Chaque appareil génère une graine aléatoire de 32 octets qui ne quitte l'appareil que dans une sauvegarde chiffrée faite par l'utilisateur (voir « Sauvegarde ») ; elle est exclue des sauvegardes Android. Pour **chaque cercle**, une clé de signature Nostr différente est dérivée (`HKDF(graine, "author:" + tag)`) : un relais ne peut pas relier vos différents cercles entre eux.
 
 Une **clé d'identité** personnelle est aussi dérivée de la graine (`HKDF(graine, "member-identity")`). Sa clé publique sert d'**identifiant de membre** ; elle n'apparaît que dans le contenu chiffré, donc seuls les membres des cercles la voient.
 
@@ -80,7 +80,16 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 - des clés publiques aléatoires (une par membre et par cercle), un tag aléatoire, une date, un contenu chiffré ;
 - l'adresse IP de l'appareil (comme tout service internet ; Orbot/Tor ou un VPN peuvent la masquer).
 
-### Limites connues (v0.1)
+### Sauvegarde (identité + cercles)
+Réglages → Sauvegarde → **Exporter** écrit un fichier `.way` (via le sélecteur de fichiers d'Android, sans permission) :
+```json
+{"format":"whereareyou-backup", "v":1, "kdf":"pbkdf2-sha256", "iter":600000, "salt":"<16 octets>", "data":"<AES-256-GCM>"}
+```
+clé = PBKDF2-HMAC-SHA256(mot de passe, sel, 600 000 itérations) ; `data` chiffre la graine, les cercles (nom, secret, partage, affichage), le nom, l'emoji, la couleur, les relais, les intervalles et le réglage batterie. « Localisation en arrière-plan » n'est pas sauvegardé (dépend des autorisations de chaque appareil). Le mot de passe est libre ; un bouton en génère un de 18 caractères (minuscules, majuscules, chiffres, caractères spéciaux, sans caractères ambigus).
+
+**Importer** (Réglages, ou écran Cercles vide après une réinstallation) : si l'appareil était déjà membre de cercles avec une autre identité, l'app propose (sans l'imposer) d'envoyer `off` dans ces cercles, signé avec l'ancienne identité, pour que son point disparaisse. Ensuite l'identité de la sauvegarde remplace la graine, les réglages sont restaurés et les cercles fusionnés (ceux de la sauvegarde priment). L'utilisateur est invité à couper le partage sur l'ancien appareil : deux appareils avec la même identité publieraient au même emplacement chez les relais et s'écraseraient.
+
+### Limites connues
 - Tout porteur du lien d'invitation peut rejoindre le cercle : il faut le transmettre par un canal de confiance (idéalement le QR code en personne).
 - On ne peut pas exclure quelqu'un d'un cercle : il faut en recréer un.
 - Les secrets sont stockés dans les préférences privées de l'app (non sauvegardées). Amélioration prévue : chiffrement via Android Keystore.
@@ -127,6 +136,7 @@ app/src/main/java/io/github/whereareyou/
 ├── data/
 │   ├── Models.kt            Cercle, position, membre, invitation
 │   ├── Store.kt             Persistance locale
+│   ├── Backup.kt            Sauvegarde chiffrée (PBKDF2 + AES-GCM), générateur de mot de passe
 │   └── LocationRepository.kt Logique centrale : publier, recevoir, déchiffrer, fusionner
 ├── service/
 │   └── LocationService.kt   Service de premier plan (type location)

@@ -84,7 +84,7 @@ private fun IntervalSlider(title: String, hint: String, steps: List<Int>, second
 }
 
 @Composable
-fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (String) -> Unit) {
+fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onRestore: () -> Unit, onMessage: (String) -> Unit) {
     val context = LocalContext.current
     val store = app.store
     var name by remember { mutableStateOf(store.displayName) }
@@ -219,6 +219,9 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onMessage: (Strin
                 )
             }
         }
+
+        HorizontalDivider()
+        BackupSection(app, onRestore, onMessage)
 
         HorizontalDivider()
         Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)

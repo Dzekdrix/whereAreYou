@@ -16,6 +16,11 @@ class Store(context: Context) {
         return Crypto.random(32).also { prefs.edit().putString("seed", Crypto.hex(it)).apply() }
     }
 
+    /** Replaces our identity (restoring a backup). commit(): must not be lost if the app is closed right after. */
+    fun setIdentitySeed(seed: ByteArray) {
+        prefs.edit().putString("seed", Crypto.hex(seed)).commit()
+    }
+
     var displayName: String
         get() = prefs.getString("name", null) ?: Build.MODEL
         set(value) = prefs.edit().putString("name", value.trim()).apply()

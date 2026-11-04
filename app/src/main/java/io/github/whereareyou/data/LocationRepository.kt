@@ -52,15 +52,18 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
     /** True while the LocationService is running. */
     val sharingActive = MutableStateFlow(false)
 
-    private val seed = store.identitySeed()
+    @Volatile private var seed = store.identitySeed()
 
     /**
      * Personal identity key: every message is signed with it (see [Envelope]).
      * Its public key is our member id, only visible (encrypted) to circle members,
      * used to merge one person seen in several circles.
      */
-    private val identity = KeyPair.derive(seed, "member-identity")
-    private val memberId = identity.publicHex
+    @Volatile private var identity = KeyPair.derive(seed, "member-identity")
+    private val memberId get() = identity.publicHex
+
+    /** Incremented when a backup is restored, so screens reload the settings. */
+    val restored = MutableStateFlow(0)
 
     /** Our member id: also gives the color the others see for us. */
     val myId: String get() = memberId
@@ -132,6 +135,55 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
         store.saveCircles(list) // same tags: no need to subscribe again
     }
 
+    // ---- backup ----
+
+    fun backupData() = BackupData(
+        seed = seed,
+        circles = _circles.value,
+        name = store.displayName,
+        emoji = store.emoji,
+        markerColor = store.markerColor,
+        movingIntervalSeconds = store.movingIntervalSeconds,
+        stillIntervalSeconds = store.stillIntervalSeconds,
+        relays = store.relays,
+        shareBattery = store.shareBattery,
+    )
+
+    /** True if [other] is our current identity seed. */
+    fun hasSeed(other: ByteArray) = seed.contentEquals(other)
+
+    /** Tells every circle that our current identity leaves, so its marker disappears for the others. */
+    fun announceLeaving() = _circles.value.forEach { publishOff(it, outboxKey = "leave:${it.tag}") }
+
+    /**
+     * Becomes the member saved in [backup]: its identity, settings and circles
+     * (merged with ours: circles of the backup win when both have the same one).
+     */
+    fun restore(backup: BackupData) {
+        store.setIdentitySeed(backup.seed)
+        store.displayName = backup.name.ifBlank { store.displayName }
+        store.emoji = backup.emoji
+        store.markerColor = backup.markerColor
+        store.movingIntervalSeconds = backup.movingIntervalSeconds
+        store.stillIntervalSeconds = backup.stillIntervalSeconds
+        store.shareBattery = backup.shareBattery
+        if (backup.relays.isNotEmpty()) updateRelays(backup.relays)
+
+        seed = backup.seed
+        identity = KeyPair.derive(seed, "member-identity")
+        authorKeys.clear()
+        synchronized(lock) {
+            // We may have seen ourselves as another member until now.
+            entries.remove(memberId)
+            lastSeen.keys.removeAll { it.startsWith("$memberId|") }
+        }
+        val tags = backup.circles.map { it.tag }.toSet()
+        saveCircles(backup.circles + _circles.value.filter { it.tag !in tags })
+        rebuildMembers()
+        restored.value++
+        republish()
+    }
+
     fun deleteCircle(circle: Circle) {
         if (circle.share && sharingActive.value) publishOff(circle)
         saveCircles(_circles.value.filter { it.tag != circle.tag })
@@ -191,16 +243,20 @@ class LocationRepository(private val store: Store, private val batteryLevel: () 
         send(c, payload)
     }
 
-    private fun publishOff(c: Circle) = send(c, JSONObject().put("off", true).put("ts", System.currentTimeMillis()))
+    private fun publishOff(c: Circle, outboxKey: String = c.tag) =
+        send(c, JSONObject().put("off", true).put("ts", System.currentTimeMillis()), outboxKey)
 
-    private fun send(c: Circle, payload: JSONObject) {
+    private fun send(c: Circle, payload: JSONObject, outboxKey: String = c.tag) {
+        // Keys taken now: the identity may change (backup restored) before the coroutine runs.
+        val identity = identity
+        val author = authorKey(c)
         scope.launch {
             val signed = Envelope.seal(identity, c.tag, payload)
             val content = Crypto.encrypt(c.key, signed.toByteArray(), c.tag.toByteArray())
             val now = System.currentTimeMillis() / 1000
             val tags = listOf(listOf("d", c.tag), listOf("expiration", (now + EXPIRATION_SECONDS).toString()))
-            val event = Nostr.signEvent(authorKey(c), Nostr.KIND_APP_DATA, tags, content, now)
-            pool.publish(c.tag, event)
+            val event = Nostr.signEvent(author, Nostr.KIND_APP_DATA, tags, content, now)
+            pool.publish(outboxKey, event)
         }
     }
 
