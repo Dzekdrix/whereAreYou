@@ -83,9 +83,13 @@ Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 
 ### Sauvegarde (identité + cercles)
 Réglages → Sauvegarde → **Exporter** écrit un fichier `.way` (via le sélecteur de fichiers d'Android, sans permission) :
 ```json
-{"format":"whereareyou-backup", "v":1, "kdf":"pbkdf2-sha256", "iter":600000, "salt":"<16 octets>", "data":"<AES-256-GCM>"}
+{"format":"whereareyou-backup", "v":1, "kdf":"pbkdf2-sha256", "iter":200000, "salt":"<16 octets>", "data":"<AES-256-GCM>"}
 ```
-clé = PBKDF2-HMAC-SHA256(mot de passe, sel, 600 000 itérations) ; `data` chiffre la graine, les cercles (nom, secret, partage, affichage), le nom, l'emoji, la couleur, les relais, les intervalles et le réglage batterie. « Localisation en arrière-plan » n'est pas sauvegardé (dépend des autorisations de chaque appareil). Le mot de passe est libre ; un bouton en génère un de 18 caractères (minuscules, majuscules, chiffres, caractères spéciaux, sans caractères ambigus).
+clé = PBKDF2-HMAC-SHA256(mot de passe, sel, 200 000 itérations ; le nombre est inscrit dans le fichier, les fichiers à 600 000 restent lisibles) ; `data` chiffre la graine, les cercles (nom, secret, partage, affichage), le nom, l'emoji, la couleur, les relais, les intervalles et le réglage batterie. « Localisation en arrière-plan » n'est pas sauvegardé (dépend des autorisations de chaque appareil). Le mot de passe est libre ; un bouton en génère un de 18 caractères (minuscules, majuscules, chiffres, caractères spéciaux, sans caractères ambigus).
+
+**Transférer vers un autre téléphone (QR code)** : même contenu, écrit en binaire compact (secrets bruts, champs à position fixe, relais omis s'ils sont ceux par défaut), chiffré avec un **code de partage de 8 chiffres** généré par l'app, puis encodé en Base45 (RFC 9285) pour utiliser le mode alphanumérique des QR codes :
+`WAY1:` + Base45(itérations (4 octets) ‖ sel (16) ‖ AES-256-GCM(PBKDF2(code), contenu))
+≈ 290 caractères pour 2 cercles, 1 200 pour 15 ; au-delà de 1 600, l'app renvoie vers le fichier. L'écran du QR code bloque les captures d'écran et passe en luminosité maximale ; le code s'affiche sur un second écran (« Accéder au code de partage »). 8 chiffres arrêtent quelqu'un qui aperçoit le QR code, pas un attaquant déterminé qui l'aurait photographié (quelques dizaines de minutes de calcul sur GPU) : le transfert est fait pour être immédiat et en face à face.
 
 **Importer** (Réglages, ou écran Cercles vide après une réinstallation) : si l'appareil était déjà membre de cercles avec une autre identité, l'app propose (sans l'imposer) d'envoyer `off` dans ces cercles, signé avec l'ancienne identité, pour que son point disparaisse. Ensuite l'identité de la sauvegarde remplace la graine, les réglages sont restaurés et les cercles fusionnés (ceux de la sauvegarde priment). L'utilisateur est invité à couper le partage sur l'ancien appareil : deux appareils avec la même identité publieraient au même emplacement chez les relais et s'écraseraient.
 
@@ -137,6 +141,7 @@ app/src/main/java/io/github/whereareyou/
 │   ├── Models.kt            Cercle, position, membre, invitation
 │   ├── Store.kt             Persistance locale
 │   ├── Backup.kt            Sauvegarde chiffrée (PBKDF2 + AES-GCM), générateur de mot de passe
+│   ├── QrBackup.kt          Transfert par QR code : format binaire compact, Base45, code à 8 chiffres
 │   └── LocationRepository.kt Logique centrale : publier, recevoir, déchiffrer, fusionner
 ├── service/
 │   └── LocationService.kt   Service de premier plan (type location)

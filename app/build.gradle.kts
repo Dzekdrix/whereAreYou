@@ -14,8 +14,8 @@ android {
         applicationId = "io.github.dzekdrix.whereareyou"
         minSdk = 29 // Android 10
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.0"
+        versionCode = 7
+        versionName = "0.5.0"
     }
 
     // Release key: local.properties may contain "signing.properties=<path>" pointing to a file with

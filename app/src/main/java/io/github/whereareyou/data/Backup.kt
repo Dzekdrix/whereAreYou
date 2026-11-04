@@ -22,12 +22,15 @@ class BackupData(
 
 /**
  * Backup file, encrypted with a password chosen by the user:
- * {"format":"whereareyou-backup","v":1,"kdf":"pbkdf2-sha256","iter":600000,"salt":"...","data":"..."}
+ * {"format":"whereareyou-backup","v":1,"kdf":"pbkdf2-sha256","iter":200000,"salt":"...","data":"..."}
  * key = PBKDF2-HMAC-SHA256(password, salt, iter), data = AES-256-GCM(JSON of [BackupData]).
+ * The iteration count is stored in each file: older files (600 000) still open.
+ * For a phone-to-phone transfer by QR code, see [QrBackup].
  */
 object Backup {
     private const val FORMAT = "whereareyou-backup"
-    private const val ITERATIONS = 600_000
+    /** PBKDF2 rounds: slows down password guessing (about 1 to 3 s on a phone). */
+    const val ITERATIONS = 200_000
     private val AAD = FORMAT.toByteArray()
 
     fun export(data: BackupData, password: String, iterations: Int = ITERATIONS): String {
@@ -64,7 +67,7 @@ object Backup {
         false
     }
 
-    private fun deriveKey(password: String, salt: ByteArray, iterations: Int): ByteArray {
+    internal fun deriveKey(password: String, salt: ByteArray, iterations: Int): ByteArray {
         val spec = PBEKeySpec(password.toCharArray(), salt, iterations, 256)
         try {
             return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded

@@ -151,4 +151,26 @@
     <string name="backup_leave_no">Don\'t notify</string>
     <string name="backup_restored_title">Backup restored</string>
     <string name="backup_restored_text">Don\'t forget to stop sharing on your old device if that is not done yet: two devices with the same identity would get in each other\'s way.</string>
+    <string name="backup_qr_button">Transfer to another phone (QR code)</string>
+    <string name="backup_qr_preparing">Preparing the QR code…</string>
+    <string name="backup_qr_too_big">Too many circles for a QR code: use Export (file) instead.</string>
+    <string name="backup_qr_title">Transfer to another phone</string>
+    <string name="backup_qr_text">On the other phone, open whereAreYou → Settings → Backup → Import → Scan a QR code (or “Restore a backup” in Circles), then type the share code.</string>
+    <string name="backup_qr_show_code">Show the share code</string>
+    <string name="backup_qr_code_title">Share code</string>
+    <string name="backup_qr_code_text">Type this code on the other phone after scanning the QR code.</string>
+    <string name="backup_qr_back">Back to the QR code</string>
+    <string name="backup_done">Done</string>
+    <string name="backup_source_text">Where is the backup?</string>
+    <string name="backup_from_file">From a file</string>
+    <string name="backup_scan_qr">Scan a QR code</string>
+    <string name="backup_scan_prompt">Scan the whereAreYou transfer QR code</string>
+    <string name="backup_qr_not_backup">This QR code is not a whereAreYou transfer.</string>
+    <string name="backup_share_code">Share code (8 digits)</string>
+    <string name="backup_import_code_text">Type the share code shown on the other phone, below its QR code.</string>
+    <string name="backup_wrong_code">Wrong code</string>
+    <string name="transfer_qr_title">Transfer QR code</string>
+    <string name="transfer_qr_warning">The scanned QR code is not a QR code to join a circle: it restores an identity and its settings. Do you want to continue?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

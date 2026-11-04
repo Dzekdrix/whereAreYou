@@ -63,6 +63,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import io.github.whereareyou.R
 import io.github.whereareyou.data.Circle
 import io.github.whereareyou.data.Invite
+import io.github.whereareyou.data.QrBackup
 import io.github.whereareyou.data.LocationRepository
 
 @Composable
@@ -295,8 +296,14 @@ private fun InviteDialog(circle: Circle, onDismiss: () -> Unit) {
 
 /** Join a circle from a scanned QR code, a pasted link, or an opened whereareyou:// link. */
 @Composable
-fun JoinDialog(initial: String?, onDismiss: () -> Unit, onJoin: (String, ByteArray, Boolean) -> Unit) {
+fun JoinDialog(
+    initial: String?,
+    onDismiss: () -> Unit,
+    onBackupQr: (String) -> Unit,
+    onJoin: (String, ByteArray, Boolean) -> Unit,
+) {
     var text by remember { mutableStateOf(initial ?: "") }
+    LaunchedEffect(text) { if (QrBackup.isQrBackup(text)) onBackupQr(text) }
     var share by remember { mutableStateOf(true) }
     val decoded = remember(text) { Invite.decode(text) }
     val scanPrompt = stringResource(R.string.scan_prompt)

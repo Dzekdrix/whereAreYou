@@ -1,0 +1,3 @@
+- Transfer to another phone with a QR code (Settings → Backup), protected by an 8-digit share code
+- Import: choose between a file and a QR code; a transfer QR code scanned with "Join" is reported and can, once confirmed, start the restore
+- Backups are encrypted and decrypted about 3 times faster

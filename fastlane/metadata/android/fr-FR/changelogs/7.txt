@@ -1,0 +1,3 @@
+- Transfert vers un autre téléphone par QR code (Réglages → Sauvegarde), protégé par un code de partage à 8 chiffres
+- Import : choix entre un fichier et un QR code ; un QR code de transfert scanné via « Rejoindre » est signalé et peut, après confirmation, lancer la restauration
+- Chiffrement et déchiffrement des sauvegardes environ 3 fois plus rapides

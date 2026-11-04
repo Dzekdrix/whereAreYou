@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
@@ -110,11 +112,12 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
     val scope = rememberCoroutineScope()
     val sharing by repo.sharingActive.collectAsStateWithLifecycle()
     var joinDialog by remember { mutableStateOf(false) }
+    var transferQr by remember { mutableStateOf<String?>(null) } // transfer QR code scanned with "Join"
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     var focusMember by remember { mutableStateOf<String?>(null) }
 
     fun toast(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
-    val restoreBackup = rememberBackupImport(app) { toast(it) }
+    val backupImport = rememberBackupImport(app) { toast(it) }
     val restored by repo.restored.collectAsStateWithLifecycle()
 
     val permissions = buildList {
@@ -216,14 +219,14 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                         onFocusHandled = { focusMember = null },
                         onOpenMenu = { scope.launch { drawerState.open() } },
                     )
-                    Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onRestore = restoreBackup, onShowMember = {
+                    Tab.CIRCLES -> CirclesScreen(repo, onJoin = { joinDialog = true }, onRestore = backupImport.start, onShowMember = {
                         focusMember = it
                         tab = Tab.MAP
                     })
                     Tab.SOURCES -> SourcesScreen(app.store.relays)
                     // Restoring a backup changes the settings: the screen reloads them.
                     Tab.SETTINGS -> key(restored) {
-                        SettingsScreen(app, onToggleSharing = toggleSharing, onRestore = restoreBackup, onMessage = { toast(it) })
+                        SettingsScreen(app, onToggleSharing = toggleSharing, onRestore = backupImport.start, onMessage = { toast(it) })
                     }
                 }
             }
@@ -237,6 +240,12 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                 joinDialog = false
                 pendingInvite.value = null
             },
+            // A transfer QR code scanned here: warn before offering a restore.
+            onBackupQr = {
+                joinDialog = false
+                pendingInvite.value = null
+                transferQr = it
+            },
             onJoin = { name, secret, share ->
                 joinDialog = false
                 pendingInvite.value = null
@@ -247,6 +256,21 @@ private fun WhereAreYouApp(app: WhereApp, pendingInvite: MutableState<String?>) 
                     toast(context.getString(R.string.already_member))
                 }
             }
+        )
+    }
+
+    transferQr?.let { text ->
+        AlertDialog(
+            onDismissRequest = { transferQr = null },
+            title = { Text(stringResource(R.string.transfer_qr_title)) },
+            text = { Text(stringResource(R.string.transfer_qr_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    transferQr = null
+                    backupImport.fromQr(text)
+                }) { Text(stringResource(R.string.yes)) }
+            },
+            dismissButton = { TextButton(onClick = { transferQr = null }) { Text(stringResource(R.string.no)) } },
         )
     }
 }

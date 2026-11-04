@@ -150,4 +150,26 @@
     <string name="backup_leave_no">Ne pas prévenir</string>
     <string name="backup_restored_title">Sauvegarde restaurée</string>
     <string name="backup_restored_text">N\'oubliez pas de couper les partages sur votre ancien appareil si ce n\'est pas déjà fait : deux appareils avec la même identité se gêneraient.</string>
+    <string name="backup_qr_button">Transférer vers un autre téléphone (QR code)</string>
+    <string name="backup_qr_preparing">Préparation du QR code…</string>
+    <string name="backup_qr_too_big">Trop de cercles pour un QR code : utilisez plutôt Exporter (fichier).</string>
+    <string name="backup_qr_title">Transfert vers un autre téléphone</string>
+    <string name="backup_qr_text">Sur l\'autre téléphone, ouvrez whereAreYou → Réglages → Sauvegarde → Importer → Scanner un QR code (ou « Restaurer une sauvegarde » dans Cercles), puis saisissez le code de partage.</string>
+    <string name="backup_qr_show_code">Accéder au code de partage</string>
+    <string name="backup_qr_code_title">Code de partage</string>
+    <string name="backup_qr_code_text">Saisissez ce code sur l\'autre téléphone après avoir scanné le QR code.</string>
+    <string name="backup_qr_back">Revoir le QR code</string>
+    <string name="backup_done">Terminé</string>
+    <string name="backup_source_text">Où se trouve la sauvegarde ?</string>
+    <string name="backup_from_file">Depuis un fichier</string>
+    <string name="backup_scan_qr">Scanner un QR code</string>
+    <string name="backup_scan_prompt">Scannez le QR code de transfert whereAreYou</string>
+    <string name="backup_qr_not_backup">Ce QR code n\'est pas un transfert whereAreYou.</string>
+    <string name="backup_share_code">Code de partage (8 chiffres)</string>
+    <string name="backup_import_code_text">Saisissez le code de partage affiché sur l\'autre téléphone, sous son QR code.</string>
+    <string name="backup_wrong_code">Code incorrect</string>
+    <string name="transfer_qr_title">QR code de transfert</string>
+    <string name="transfer_qr_warning">Le QR Code scanné n\'est pas un QR Code permettant de rejoindre un cercle mais il permet de restaurer une identité et ses paramètres, voulez-vous aller plus loin ?</string>
+    <string name="yes">Oui</string>
+    <string name="no">Non</string>
 </resources>
