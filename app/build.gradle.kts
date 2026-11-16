@@ -25,8 +25,11 @@ android {
     }.getProperty("signing.properties")?.let { file(it) }?.takeIf { it.exists() }
     val releaseSigning = signingFile?.let { f ->
         val p = Properties().apply { f.inputStream().use { load(it) } }
+        // storeFile may be an absolute path from another computer (synced folder mounted elsewhere):
+        // if it does not exist here, take the keystore of the same name next to the properties file.
+        val store = file(p.getProperty("storeFile")).let { if (it.exists()) it else File(f.parentFile, it.name) }
         signingConfigs.create("release") {
-            storeFile = file(p.getProperty("storeFile"))
+            storeFile = store
             storePassword = p.getProperty("storePassword")
             keyAlias = p.getProperty("keyAlias")
             keyPassword = p.getProperty("keyPassword")
