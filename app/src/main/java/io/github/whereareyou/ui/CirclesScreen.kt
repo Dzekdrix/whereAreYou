@@ -75,6 +75,7 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onRestore: () ->
     val ownFix by repo.ownFix.collectAsStateWithLifecycle()
     // Members shown on the map: those sharing at least one visible circle with us.
     val shownTags = circles.filter { it.visible }.map { it.tag }.toSet()
+    val clashes = remember(members) { repo.nameClashes(members) }
     var expanded by rememberSaveable { mutableStateOf(setOf<String>()) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -160,6 +161,8 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onRestore: () ->
                                         emoji = repo.emoji,
                                         color = repo.markerColor,
                                         battery = repo.sharedBattery,
+                                        identityName = repo.displayName,
+                                        clash = repo.myId in clashes,
                                     )
                                 } else if (!circle.share) {
                                     Hint(stringResource(R.string.not_sharing_here))
@@ -172,6 +175,7 @@ fun CirclesScreen(repo: LocationRepository, onJoin: () -> Unit, onRestore: () ->
                                         emoji = m.emoji,
                                         color = m.color,
                                         battery = m.battery,
+                                        clash = m.id in clashes,
                                     )
                                 }
                                 if (inCircle.isEmpty()) Hint(stringResource(R.string.no_members_yet))
@@ -239,6 +243,8 @@ private fun MemberRow(
     emoji: String = "",
     color: Int? = null,
     battery: BatteryState? = null,
+    identityName: String = name,
+    clash: Boolean = false,
 ) {
     val res = LocalContext.current.resources
     val avatar = remember(id, avatarName, emoji, color) { avatarBitmap(id, avatarName, 96, false, emoji, color).asImageBitmap() }
@@ -250,6 +256,11 @@ private fun MemberRow(
         headlineContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(name, Modifier.weight(1f, fill = false))
+                if (clash) {
+                    Spacer(Modifier.width(4.dp))
+                    NameClashBadge()
+                }
+                IdentityInfoButton(identityName, id, clash)
                 battery?.let {
                     Spacer(Modifier.width(8.dp))
                     BatteryBadge(it)

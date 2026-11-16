@@ -173,4 +173,9 @@
     <string name="transfer_qr_warning">The scanned QR code is not a QR code to join a circle: it restores an identity and its settings. Do you want to continue?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="identity_info">Identity</string>
+    <string name="identity_label">User identity:</string>
+    <string name="identity_hint">These emoji are unique to this person and practically impossible to imitate. To be sure it is really them, compare them with what their phone shows (Settings → ⓘ next to the name).</string>
+    <string name="name_clash_short">Name used by another identity</string>
+    <string name="name_clash_text">Another member of your circles uses the same name with a different identity. It may be someone pretending to be this person (or the same person with a second phone): check the emoji with them.</string>
 </resources>

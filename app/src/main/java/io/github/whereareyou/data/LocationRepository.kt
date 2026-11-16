@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit
  *  - each circle has a secret -> public tag "d" + AES key
  *  - each member publishes a Nostr event kind 30078, tag d=<circle tag>,
  *    signed with a key derived for this circle only (circles are not linkable)
- *  - content = AES-GCM(JSON {id, n, lat, lon, acc, ts, b?, ch?})
+ *  - content = AES-GCM(envelope signed by the member: {k, a, n, lat, lon, acc, ts, b?, ch?})
  *  - relays keep only the latest event per (author, d): it is the "last known position"
  */
 class LocationRepository(private val store: Store, private val batteryState: () -> BatteryState?) {
@@ -67,6 +67,10 @@ class LocationRepository(private val store: Store, private val batteryState: () 
 
     /** Our member id: also gives the color the others see for us. */
     val myId: String get() = memberId
+
+    /** Ids (ourselves included) whose name another identity of our circles also uses: see [NameClash]. */
+    fun nameClashes(members: List<Member>): Set<String> =
+        NameClash.find(members.map { it.id to it.name } + (memberId to store.displayName))
     private val authorKeys = ConcurrentHashMap<String, KeyPair>()
 
     private val lock = Any()
@@ -256,7 +260,7 @@ class LocationRepository(private val store: Store, private val batteryState: () 
         val identity = identity
         val author = authorKey(c)
         scope.launch {
-            val signed = Envelope.seal(identity, c.tag, payload)
+            val signed = Envelope.seal(identity, author.publicHex, c.tag, payload)
             val content = Crypto.encrypt(c.key, signed.toByteArray(), c.tag.toByteArray())
             val now = System.currentTimeMillis() / 1000
             val tags = listOf(listOf("d", c.tag), listOf("expiration", (now + EXPIRATION_SECONDS).toString()))
@@ -286,11 +290,13 @@ class LocationRepository(private val store: Store, private val batteryState: () 
         val tag = (0 until tags.length()).map { tags.optJSONArray(it) }
             .firstOrNull { it != null && it.optString(0) == "d" }?.optString(1) ?: return
         val circle = _circles.value.firstOrNull { it.tag == tag } ?: return
-        if (ev.optString("pubkey") == authorKey(circle).publicHex) return // our own event
+        val author = ev.optString("pubkey")
+        if (author == authorKey(circle).publicHex) return // our own event
         val plain = Crypto.decrypt(circle.key, ev.optString("content"), tag.toByteArray()) ?: return
-        // Rejects unsigned messages and messages signed by someone else than the member they claim to be.
-        val p = Envelope.open(tag, String(plain)) ?: run {
-            Log.w(TAG, "dropped message with invalid signature")
+        // Rejects unsigned messages, messages signed by someone else than the member they claim to be,
+        // and messages re-published by someone else inside another event.
+        val p = Envelope.open(tag, author, String(plain)) ?: run {
+            Log.w(TAG, "dropped message with invalid signature or author")
             return
         }
         val mid = p.getString("k")

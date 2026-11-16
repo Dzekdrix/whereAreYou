@@ -332,6 +332,8 @@ fun MapScreen(
         val shown = circles.filter { it.visible }.map { it.tag }.toSet()
         allMembers.filter { m -> m.circleTags.any { it in shown } }
     }
+    // Same name, other identity: compared with everyone we know, hidden circles included.
+    val clashes = remember(allMembers) { repo.nameClashes(allMembers) }
     val ownFix by repo.ownFix.collectAsStateWithLifecycle()
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -381,7 +383,7 @@ fun MapScreen(
 
         members.firstOrNull { it.id == selectedId }?.let { m ->
             holder.cameraTick.intValue // re-position when the camera moves
-            holder.screenPosition(m)?.let { p -> MemberBubble(m, now, p) }
+            holder.screenPosition(m)?.let { p -> MemberBubble(m, now, p, clash = m.id in clashes) }
         }
 
         SmallFloatingActionButton(
@@ -459,7 +461,7 @@ private fun BubbleTip(color: Color, pointsDown: Boolean) {
  * Above the marker when there is room below the status bar, otherwise below it; always inside the screen.
  */
 @Composable
-private fun MemberBubble(m: Member, now: Long, p: PointF) {
+private fun MemberBubble(m: Member, now: Long, p: PointF, clash: Boolean) {
     val context = LocalContext.current
     val res = context.resources
     val color = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -484,6 +486,11 @@ private fun MemberBubble(m: Member, now: Long, p: PointF) {
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f, fill = false),
                         )
+                        if (clash) {
+                            Spacer(Modifier.width(4.dp))
+                            NameClashBadge()
+                        }
+                        IdentityInfoButton(m.name, m.id, clash)
                         m.battery?.let {
                             Spacer(Modifier.width(8.dp))
                             BatteryBadge(it)

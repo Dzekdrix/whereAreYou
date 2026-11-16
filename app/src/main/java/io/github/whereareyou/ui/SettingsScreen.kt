@@ -112,6 +112,8 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onRestore: () -> 
         app.repo.republish()
     }
     val status by app.repo.relayStatus.collectAsStateWithLifecycle()
+    val members by app.repo.members.collectAsStateWithLifecycle()
+    val clashes = remember(members, name) { app.repo.nameClashes(members) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -124,6 +126,8 @@ fun SettingsScreen(app: WhereApp, onToggleSharing: () -> Unit, onRestore: () -> 
                 if (it.isNotBlank()) store.displayName = it
             },
             label = { Text(stringResource(R.string.display_name)) },
+            // Our own fingerprint, to compare in person with what the others see for us.
+            trailingIcon = { IdentityInfoButton(name, app.repo.myId, app.repo.myId in clashes) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )

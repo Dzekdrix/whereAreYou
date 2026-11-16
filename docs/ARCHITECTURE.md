@@ -66,15 +66,23 @@ Contenu chiffré : une enveloppe **signée par le membre** avec sa clé d'identi
 ```
 avec `signature = Schnorr(clé d'identité, taggedHash("whereareyou/v2/message", tag || JSON interne))` et le JSON interne :
 ```json
-{"k":"<clé publique d'identité>", "n":"Prénom", "e":"🦊", "c":"#1E88E5", "b":82, "ch":true, "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000, "gap":1800000}
+{"k":"<clé publique d'identité>", "a":"<pubkey Nostr de l'événement>", "n":"Prénom", "e":"🦊", "c":"#1E88E5", "b":82, "ch":true, "lat":48.8566, "lon":2.3522, "acc":12, "ts":1730000000000, "gap":1800000}
 ```
+`a` (depuis 0.6.0) est la clé d'auteur Nostr de l'événement qui transporte le message : il lie le message à son événement, si bien qu'un ancien message ne peut pas être republié par quelqu'un d'autre dans un nouvel événement (réemballage). Les versions antérieures ignorent ce champ (la signature porte sur la chaîne `p` telle quelle) ; leurs messages, sans `a`, restent acceptés.
 `e` et `c` (facultatifs) sont l'emoji et la couleur de fond choisis pour le marqueur ; à la réception, l'emoji est réduit à un seul caractère et la couleur doit être de la forme `#RRGGBB`. Sans `c`, la couleur est déduite de l'identifiant du membre. `b` (facultatif) est le niveau de batterie en %, envoyé seulement si le réglage « Partager mon niveau de batterie » est activé ; une valeur hors de 0–100 est ignorée. `ch` (facultatif) vaut `true` quand le téléphone est branché ; il est absent sinon. Un message est renvoyé aussitôt au branchement et au débranchement.
 `{"k":"...", "off":true, "ts":...}` signale l'arrêt du partage (le marqueur disparaît chez les autres).
 
 Les relais ne gardent que le **dernier** événement par (auteur, `d`) : c'est exactement la « dernière position connue ».
 
 ### Réception
-Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 24 h}` sur tous les relais. Chaque événement est déchiffré avec la clé du cercle ; s'il ne se déchiffre pas, il est ignoré. Ensuite l'enveloppe est vérifiée : le message est rejeté si la signature ne correspond pas à la clé `k` annoncée (un membre ne peut pas se faire passer pour un autre), si `ts` a plus de 24 h, ou s'il est plus ancien que le dernier message accepté de ce membre dans ce cercle (pas de rejeu).
+Abonnement `{"kinds":[30078], "#d":[tags de mes cercles], "since": maintenant - 24 h}` sur tous les relais. Chaque événement est déchiffré avec la clé du cercle ; s'il ne se déchiffre pas, il est ignoré. Ensuite l'enveloppe est vérifiée : le message est rejeté si la signature ne correspond pas à la clé `k` annoncée (un membre ne peut pas se faire passer pour un autre), si `a` est présent et diffère de la `pubkey` de l'événement (réemballage), si `ts` a plus de 24 h, ou s'il est plus ancien que le dernier message accepté de ce membre dans ce cercle (pas de rejeu).
+
+### Empreinte d'identité
+La signature garantit qu'un message vient bien de la clé `k`, mais le nom affiché est libre : un membre pourrait se créer une autre identité au nom de « Bob ». Pour le vérifier, chaque fiche (carte, cercles, et sa propre fiche dans Réglages) a un bouton ⓘ qui affiche l'**empreinte** de l'identité : 8 emoji, les 8 premiers octets de `taggedHash("whereareyou/fingerprint", k)`, chacun choisissant un emoji parmi une table fixe de 256 (`Fingerprint.EMOJI`, dont l'ordre ne doit jamais changer). On la compare en personne avec ce qu'affiche le téléphone de l'intéressé.
+- Elle ne révèle rien de la clé (SHA-256, sens unique, 64 bits sur 256) ; et `k` n'est de toute façon qu'une clé publique.
+- 64 bits : fabriquer une identité ayant la même empreinte qu'un membre donné demande ~2^64 générations de clés. Collision accidentelle entre deux membres : ~n²/2^65, négligeable.
+
+Un **triangle jaune** s'affiche à côté du nom quand deux identités différentes connues de l'appareil (tous cercles confondus, y compris soi-même) portent le même nom, en ignorant casse, accents, espaces et caractères invisibles. Les lettres semblables d'autres alphabets (cyrillique…) ne sont pas détectées : l'empreinte reste la vraie vérification. Un membre qui a cessé de partager depuis plus de 24 h n'est plus connu, donc plus comparé.
 
 ### Ce que voit un relais
 - des clés publiques aléatoires (une par membre et par cercle), un tag aléatoire, une date, un contenu chiffré ;

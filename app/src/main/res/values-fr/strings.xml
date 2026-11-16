@@ -172,4 +172,9 @@
     <string name="transfer_qr_warning">Le QR Code scanné n\'est pas un QR Code permettant de rejoindre un cercle mais il permet de restaurer une identité et ses paramètres, voulez-vous aller plus loin ?</string>
     <string name="yes">Oui</string>
     <string name="no">Non</string>
+    <string name="identity_info">Identité</string>
+    <string name="identity_label">Identité de l\'utilisateur :</string>
+    <string name="identity_hint">Ces emoji sont propres à cette personne et pratiquement impossibles à imiter. Pour être sûr que c\'est bien elle, comparez-les avec ceux affichés sur son téléphone (Réglages → ⓘ à côté du nom).</string>
+    <string name="name_clash_short">Nom utilisé par une autre identité</string>
+    <string name="name_clash_text">Un autre membre de vos cercles utilise le même nom avec une identité différente. Il peut s\'agir de quelqu\'un qui se fait passer pour cette personne (ou de la même personne avec un second téléphone) : vérifiez les emoji avec elle.</string>
 </resources>

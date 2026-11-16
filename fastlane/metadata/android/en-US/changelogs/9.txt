@@ -1,0 +1,3 @@
+- Identity: an ⓘ button on each member shows their fingerprint (8 emoji), to check in person that it really is them
+- A yellow triangle flags two different identities using the same name
+- Security: an old message can no longer be re-published by someone else

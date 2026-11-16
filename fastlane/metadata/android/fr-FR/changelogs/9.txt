@@ -1,0 +1,3 @@
+- Identité : un bouton ⓘ sur chaque fiche affiche l'empreinte du membre (8 emoji) pour vérifier en personne que c'est bien lui
+- Un triangle jaune signale deux identités différentes portant le même nom
+- Sécurité : un ancien message ne peut plus être republié par quelqu'un d'autre
